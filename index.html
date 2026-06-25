@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="uz">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pinchuza — Kirish</title>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<style>
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--bg: #0d0f14;
+				--surface: #13161e;
+				--border: #1f2433;
+				--accent: #4f8ef7;
+				--accent-glow: rgba(79, 142, 247, 0.18);
+				--accent-dim: rgba(79, 142, 247, 0.08);
+				--text: #e8eaf0;
+				--muted: #6b7280;
+				--error: #f87171;
+				--success: #34d399;
+			}
+			body {
+				min-height: 100vh;
+				background: var(--bg);
+				font-family: 'Inter', sans-serif;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				overflow: hidden;
+				position: relative;
+			}
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background:
+					radial-gradient(ellipse 60% 50% at 20% 20%, rgba(79, 142, 247, 0.07) 0%, transparent 70%),
+					radial-gradient(ellipse 50% 60% at 80% 80%, rgba(79, 142, 247, 0.05) 0%, transparent 70%);
+				pointer-events: none;
+			}
+			body::after {
+				content: '';
+				position: fixed;
+				inset: 0;
+				background-image:
+					linear-gradient(rgba(79, 142, 247, 0.04) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(79, 142, 247, 0.04) 1px, transparent 1px);
+				background-size: 40px 40px;
+				pointer-events: none;
+			}
+			.wrapper {
+				position: relative;
+				z-index: 1;
+				width: 100%;
+				max-width: 420px;
+				padding: 24px;
+			}
+			.brand {
+				text-align: center;
+				margin-bottom: 36px;
+			}
+			.brand-icon {
+				width: 52px;
+				height: 52px;
+				background: var(--accent-dim);
+				border: 1px solid rgba(79, 142, 247, 0.3);
+				border-radius: 14px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				margin-bottom: 14px;
+				box-shadow: 0 0 24px var(--accent-glow);
+			}
+			.brand-icon svg {
+				width: 26px;
+				height: 26px;
+				stroke: var(--accent);
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.brand-name {
+				font-size: 22px;
+				font-weight: 700;
+				color: var(--text);
+				letter-spacing: -0.3px;
+			}
+			.brand-sub {
+				font-size: 13px;
+				color: var(--muted);
+				margin-top: 4px;
+			}
+			.card {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 20px;
+				padding: 36px 32px;
+				box-shadow:
+					0 0 0 1px rgba(79, 142, 247, 0.06),
+					0 24px 48px rgba(0, 0, 0, 0.4);
+			}
+			.card-title {
+				font-size: 18px;
+				font-weight: 600;
+				color: var(--text);
+				margin-bottom: 6px;
+			}
+			.card-desc {
+				font-size: 13px;
+				color: var(--muted);
+				margin-bottom: 28px;
+			}
+			.field {
+				margin-bottom: 18px;
+			}
+			label {
+				display: block;
+				font-size: 12.5px;
+				font-weight: 500;
+				color: var(--muted);
+				letter-spacing: 0.4px;
+				text-transform: uppercase;
+				margin-bottom: 8px;
+			}
+			.input-wrap {
+				position: relative;
+			}
+			.input-icon {
+				position: absolute;
+				left: 14px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 16px;
+				height: 16px;
+				stroke: var(--muted);
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+				pointer-events: none;
+				transition: stroke 0.2s;
+			}
+			input {
+				width: 100%;
+				background: var(--bg);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 12px 14px 12px 40px;
+				font-size: 14px;
+				font-family: 'Inter', sans-serif;
+				color: var(--text);
+				outline: none;
+				transition:
+					border-color 0.2s,
+					box-shadow 0.2s;
+			}
+			input::placeholder {
+				color: var(--muted);
+			}
+			input:focus {
+				border-color: var(--accent);
+				box-shadow: 0 0 0 3px var(--accent-glow);
+			}
+			.input-wrap:has(input:focus) .input-icon {
+				stroke: var(--accent);
+			}
+			.eye-btn {
+				position: absolute;
+				right: 12px;
+				top: 50%;
+				transform: translateY(-50%);
+				background: none;
+				border: none;
+				cursor: pointer;
+				padding: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.eye-btn svg {
+				width: 16px;
+				height: 16px;
+				stroke: var(--muted);
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+				transition: stroke 0.2s;
+			}
+			.eye-btn:hover svg {
+				stroke: var(--text);
+			}
+			.error-msg {
+				display: none;
+				font-size: 12.5px;
+				color: var(--error);
+				margin-top: 8px;
+				padding: 10px 12px;
+				background: rgba(248, 113, 113, 0.08);
+				border: 1px solid rgba(248, 113, 113, 0.2);
+				border-radius: 8px;
+			}
+			.error-msg.show {
+				display: block;
+			}
+			.btn {
+				width: 100%;
+				padding: 13px;
+				background: var(--accent);
+				color: #fff;
+				font-size: 14px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				border: none;
+				border-radius: 10px;
+				cursor: pointer;
+				margin-top: 8px;
+				position: relative;
+				overflow: hidden;
+				transition:
+					opacity 0.2s,
+					transform 0.15s,
+					box-shadow 0.2s;
+				box-shadow: 0 4px 20px rgba(79, 142, 247, 0.3);
+			}
+			.btn:hover {
+				opacity: 0.92;
+				box-shadow: 0 6px 28px rgba(79, 142, 247, 0.45);
+			}
+			.btn:active {
+				transform: scale(0.985);
+			}
+			.btn.loading {
+				pointer-events: none;
+				opacity: 0.7;
+			}
+			.btn-text {
+				transition: opacity 0.2s;
+			}
+			.btn.loading .btn-text {
+				opacity: 0;
+			}
+			.spinner {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				transition: opacity 0.2s;
+			}
+			.btn.loading .spinner {
+				opacity: 1;
+			}
+			.spinner::after {
+				content: '';
+				width: 18px;
+				height: 18px;
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-top-color: #fff;
+				border-radius: 50%;
+				animation: spin 0.7s linear infinite;
+			}
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+			.divider {
+				height: 1px;
+				background: var(--border);
+				margin: 24px 0;
+			}
+			.footer-note {
+				text-align: center;
+				font-size: 12px;
+				color: var(--muted);
+			}
+			.footer-note span {
+				display: inline-block;
+				width: 6px;
+				height: 6px;
+				background: var(--success);
+				border-radius: 50%;
+				margin-right: 6px;
+				vertical-align: middle;
+				box-shadow: 0 0 8px var(--success);
+			}
+			@keyframes shake {
+				0%,
+				100% {
+					transform: translateX(0);
+				}
+				20% {
+					transform: translateX(-6px);
+				}
+				40% {
+					transform: translateX(6px);
+				}
+				60% {
+					transform: translateX(-4px);
+				}
+				80% {
+					transform: translateX(4px);
+				}
+			}
+			.shake {
+				animation: shake 0.4s ease;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrapper">
+			<div class="brand">
+				<div class="brand-icon">
+					<svg viewBox="0 0 24 24">
+						<path d="M12 2L2 7l10 5 10-5-10-5z" />
+						<path d="M2 17l10 5 10-5" />
+						<path d="M2 12l10 5 10-5" />
+					</svg>
+				</div>
+				<div class="brand-name">Pinchuza</div>
+				<div class="brand-sub">Boshqaruv tizimi</div>
+			</div>
+			<div class="card">
+				<div class="card-title">Xush kelibsiz</div>
+				<div class="card-desc">Davom etish uchun tizimga kiring</div>
+				<div class="field">
+					<label for="username">Foydalanuvchi nomi</label>
+					<div class="input-wrap">
+						<input type="text" id="username" placeholder="admin" autocomplete="username" spellcheck="false" />
+						<svg class="input-icon" viewBox="0 0 24 24">
+							<circle cx="12" cy="8" r="4" />
+							<path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+						</svg>
+					</div>
+				</div>
+				<div class="field">
+					<label for="password">Parol</label>
+					<div class="input-wrap">
+						<input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+						<svg class="input-icon" viewBox="0 0 24 24">
+							<rect x="3" y="11" width="18" height="11" rx="2" />
+							<path d="M7 11V7a5 5 0 0110 0v4" />
+						</svg>
+						<button class="eye-btn" type="button" id="eyeBtn">
+							<svg id="eyeIcon" viewBox="0 0 24 24">
+								<path d="M1	 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+								<circle cx="12" cy="12" r="3" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="error-msg" id="errorMsg"></div>
+				<button class="btn" id="loginBtn" type="button">
+					<span class="btn-text">Kirish</span>
+					<span class="spinner"></span>
+				</button>
+				<div class="divider"></div>
+				<div class="footer-note"><span></span>Tizim faol va ishga tayyor</div>
+			</div>
+		</div>
+		<script>
+			const ADMIN = { username: 'Nuriddin', password: 'pinchuza123' };
+
+			// Allaqachon login qilingan bo'lsa dashboardga
+			if (localStorage.getItem('pinchuza_auth')) {
+				window.location.href = 'dashboard.html';
+			}
+
+			const loginBtn = document.getElementById('loginBtn');
+			const usernameInput = document.getElementById('username');
+			const passwordInput = document.getElementById('password');
+			const errorMsg = document.getElementById('errorMsg');
+			const eyeBtn = document.getElementById('eyeBtn');
+			const eyeIcon = document.getElementById('eyeIcon');
+
+			let showPass = false;
+			eyeBtn.addEventListener('click', () => {
+				showPass = !showPass;
+				passwordInput.type = showPass ? 'text' : 'password';
+				eyeIcon.innerHTML = showPass
+					? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+					: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+			});
+
+			[usernameInput, passwordInput].forEach(el =>
+				el.addEventListener('keydown', e => {
+					if (e.key === 'Enter') doLogin();
+				}),
+			);
+			loginBtn.addEventListener('click', doLogin);
+
+			function doLogin() {
+				const u = usernameInput.value.trim();
+				const p = passwordInput.value.trim();
+				errorMsg.classList.remove('show');
+
+				if (!u || !p) {
+					showError("Barcha maydonlarni to'ldiring");
+					return;
+				}
+
+				loginBtn.classList.add('loading');
+				setTimeout(() => {
+					loginBtn.classList.remove('loading');
+					if (u === ADMIN.username && p === ADMIN.password) {
+						localStorage.setItem(
+							'pinchuza_auth',
+							JSON.stringify({
+								user: 'admin',
+								name: 'Admin',
+								loginTime: Date.now(),
+							}),
+						);
+						loginBtn.style.background = 'var(--success)';
+						loginBtn.querySelector('.btn-text').textContent = 'Kirish muvaffaqiyatli...';
+						setTimeout(() => {
+							window.location.href = 'dashboard.html';
+						}, 700);
+					} else {
+						showError("Foydalanuvchi nomi yoki parol noto'g'ri");
+					}
+				}, 900);
+			}
+
+			function showError(msg) {
+				errorMsg.textContent = msg;
+				errorMsg.classList.add('show');
+				const card = document.querySelector('.card');
+				card.classList.remove('shake');
+				void card.offsetWidth;
+				card.classList.add('shake');
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,1791 @@
+<!doctype html>
+<html lang="uz">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pinchuza — Ombor</title>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<style>
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--bg: #0b0d12;
+				--surface: #12151d;
+				--surface2: #181c27;
+				--border: #1e2336;
+				--accent: #4f8ef7;
+				--accent-g: rgba(79, 142, 247, 0.15);
+				--accent-d: rgba(79, 142, 247, 0.07);
+				--text: #e4e8f0;
+				--muted: #5a6380;
+				--muted2: #8892aa;
+				--green: #34d399;
+				--green-g: rgba(52, 211, 153, 0.12);
+				--amber: #fbbf24;
+				--amber-g: rgba(251, 191, 36, 0.12);
+				--coral: #f87171;
+				--coral-g: rgba(248, 113, 113, 0.12);
+				--purple: #a78bfa;
+				--purple-g: rgba(167, 139, 250, 0.12);
+				--sidebar-w: 240px;
+			}
+			body {
+				min-height: 100vh;
+				background: var(--bg);
+				font-family: 'Inter', sans-serif;
+				color: var(--text);
+				display: flex;
+			}
+
+			/* SIDEBAR */
+			.sidebar {
+				width: var(--sidebar-w);
+				min-height: 100vh;
+				background: var(--surface);
+				border-right: 1px solid var(--border);
+				display: flex;
+				flex-direction: column;
+				flex-shrink: 0;
+				position: fixed;
+				top: 0;
+				left: 0;
+				bottom: 0;
+				z-index: 100;
+			}
+			.sidebar-brand {
+				padding: 24px 20px 20px;
+				border-bottom: 1px solid var(--border);
+				display: flex;
+				align-items: center;
+				gap: 12px;
+			}
+			.brand-logo {
+				width: 36px;
+				height: 36px;
+				background: var(--accent-d);
+				border: 1px solid rgba(79, 142, 247, 0.25);
+				border-radius: 10px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+				box-shadow: 0 0 16px var(--accent-g);
+			}
+			.brand-logo svg {
+				width: 18px;
+				height: 18px;
+				stroke: var(--accent);
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.brand-text strong {
+				font-size: 15px;
+				font-weight: 700;
+				color: var(--text);
+			}
+			.brand-text span {
+				font-size: 11px;
+				color: var(--muted);
+				display: block;
+			}
+			.sidebar-nav {
+				padding: 16px 12px;
+				flex: 1;
+				overflow-y: auto;
+			}
+			.nav-section {
+				margin-bottom: 24px;
+			}
+			.nav-label {
+				font-size: 10px;
+				font-weight: 600;
+				letter-spacing: 1px;
+				text-transform: uppercase;
+				color: var(--muted);
+				padding: 0 8px;
+				margin-bottom: 6px;
+			}
+			.nav-item {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 9px 10px;
+				border-radius: 8px;
+				font-size: 13.5px;
+				font-weight: 500;
+				color: var(--muted2);
+				cursor: pointer;
+				transition: all 0.15s;
+				text-decoration: none;
+				margin-bottom: 2px;
+			}
+			.nav-item svg {
+				width: 16px;
+				height: 16px;
+				flex-shrink: 0;
+				stroke: currentColor;
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.nav-item:hover {
+				background: var(--surface2);
+				color: var(--text);
+			}
+			.nav-item.active {
+				background: var(--accent-g);
+				color: var(--accent);
+				border: 1px solid rgba(79, 142, 247, 0.2);
+			}
+			.sidebar-footer {
+				padding: 16px 12px;
+				border-top: 1px solid var(--border);
+			}
+			.user-card {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 10px;
+				border-radius: 10px;
+				background: var(--surface2);
+			}
+			.user-avatar {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--accent-g);
+				border: 1px solid rgba(79, 142, 247, 0.3);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 13px;
+				font-weight: 700;
+				color: var(--accent);
+				flex-shrink: 0;
+			}
+			.user-info {
+				flex: 1;
+			}
+			.user-name {
+				font-size: 13px;
+				font-weight: 600;
+				color: var(--text);
+			}
+			.user-role {
+				font-size: 11px;
+				color: var(--muted);
+			}
+			.logout-btn {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				margin-top: 8px;
+				padding: 8px 10px;
+				border-radius: 8px;
+				font-size: 12.5px;
+				color: var(--coral);
+				cursor: pointer;
+				transition: background 0.15s;
+			}
+			.logout-btn:hover {
+				background: var(--coral-g);
+			}
+			.logout-btn svg {
+				width: 14px;
+				height: 14px;
+				stroke: var(--coral);
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+
+			/* MAIN */
+			.main {
+				margin-left: var(--sidebar-w);
+				flex: 1;
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+				overflow-y: auto;
+			}
+			.topbar {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: rgba(11, 13, 18, 0.9);
+				backdrop-filter: blur(12px);
+				border-bottom: 1px solid var(--border);
+				padding: 0 28px;
+				height: 60px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+			}
+			.topbar-left h1 {
+				font-size: 16px;
+				font-weight: 600;
+				color: var(--text);
+			}
+			.topbar-left p {
+				font-size: 12px;
+				color: var(--muted);
+				margin-top: 1px;
+			}
+			.topbar-right {
+				display: flex;
+				gap: 10px;
+			}
+			.btn-primary {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 9px 18px;
+				background: var(--accent);
+				color: #fff;
+				border: none;
+				border-radius: 10px;
+				font-size: 13.5px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				cursor: pointer;
+				transition: opacity 0.2s;
+				box-shadow: 0 4px 16px rgba(79, 142, 247, 0.3);
+			}
+			.btn-primary:hover {
+				opacity: 0.9;
+			}
+			.btn-primary svg {
+				width: 15px;
+				height: 15px;
+				stroke: #fff;
+				fill: none;
+				stroke-width: 2;
+				stroke-linecap: round;
+			}
+			.btn-danger {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 9px 18px;
+				background: transparent;
+				color: var(--coral);
+				border: 1px solid var(--coral);
+				border-radius: 10px;
+				font-size: 13.5px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-danger:hover {
+				background: var(--coral-g);
+			}
+			.btn-danger svg {
+				width: 15px;
+				height: 15px;
+				stroke: var(--coral);
+				fill: none;
+				stroke-width: 2;
+				stroke-linecap: round;
+			}
+
+			.content {
+				padding: 28px;
+				flex: 1;
+			}
+
+			/* OY TANLASH */
+			.month-tabs {
+				display: flex;
+				gap: 6px;
+				margin-bottom: 24px;
+				flex-wrap: wrap;
+			}
+			.month-tab {
+				padding: 6px 14px;
+				border-radius: 20px;
+				font-size: 12px;
+				font-weight: 500;
+				cursor: pointer;
+				border: 1px solid var(--border);
+				color: var(--muted2);
+				background: var(--surface);
+				transition: all 0.15s;
+			}
+			.month-tab:hover {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
+			.month-tab.active {
+				background: var(--accent);
+				color: #fff;
+				border-color: var(--accent);
+			}
+
+			/* STATS */
+			.stats-grid {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 16px;
+				margin-bottom: 28px;
+			}
+			.stat-card {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 14px;
+				padding: 20px;
+				position: relative;
+				overflow: hidden;
+			}
+			.stat-card::before {
+				content: '';
+				position: absolute;
+				top: -10px;
+				right: -10px;
+				width: 70px;
+				height: 70px;
+				border-radius: 50%;
+				opacity: 0.4;
+				filter: blur(20px);
+			}
+			.sc-green::before {
+				background: var(--green);
+			}
+			.sc-amber::before {
+				background: var(--amber);
+			}
+			.sc-coral::before {
+				background: var(--coral);
+			}
+			.sc-purple::before {
+				background: var(--purple);
+			}
+			.stat-icon {
+				width: 36px;
+				height: 36px;
+				border-radius: 9px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin-bottom: 12px;
+			}
+			.stat-icon svg {
+				width: 17px;
+				height: 17px;
+				fill: none;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.sc-green .stat-icon {
+				background: var(--green-g);
+			}
+			.sc-green .stat-icon svg {
+				stroke: var(--green);
+			}
+			.sc-amber .stat-icon {
+				background: var(--amber-g);
+			}
+			.sc-amber .stat-icon svg {
+				stroke: var(--amber);
+			}
+			.sc-coral .stat-icon {
+				background: var(--coral-g);
+			}
+			.sc-coral .stat-icon svg {
+				stroke: var(--coral);
+			}
+			.sc-purple .stat-icon {
+				background: var(--purple-g);
+			}
+			.sc-purple .stat-icon svg {
+				stroke: var(--purple);
+			}
+			.stat-label {
+				font-size: 11px;
+				color: var(--muted);
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				margin-bottom: 6px;
+			}
+			.stat-value {
+				font-size: 24px;
+				font-weight: 700;
+				color: var(--text);
+				line-height: 1;
+			}
+			.stat-unit {
+				font-size: 13px;
+				color: var(--muted2);
+				margin-left: 3px;
+				font-weight: 400;
+			}
+
+			/* PROGRESS BAR */
+			.progress-wrap {
+				margin-top: 10px;
+			}
+			.progress-label {
+				display: flex;
+				justify-content: space-between;
+				font-size: 11px;
+				color: var(--muted);
+				margin-bottom: 5px;
+			}
+			.progress-bar {
+				height: 5px;
+				background: var(--border);
+				border-radius: 3px;
+				overflow: hidden;
+			}
+			.progress-fill {
+				height: 100%;
+				border-radius: 3px;
+				transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+
+			/* TWO COL */
+			.two-col {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 20px;
+			}
+
+			/* PANEL */
+			.panel {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 14px;
+				overflow: hidden;
+			}
+			.panel-head {
+				padding: 18px 22px;
+				border-bottom: 1px solid var(--border);
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+			}
+			.panel-head h2 {
+				font-size: 14px;
+				font-weight: 600;
+				color: var(--text);
+			}
+			.panel-head span {
+				font-size: 12px;
+				color: var(--muted);
+			}
+			.btn-sm {
+				padding: 6px 14px;
+				border-radius: 8px;
+				font-size: 12.5px;
+				font-weight: 600;
+				cursor: pointer;
+				border: 1px solid var(--accent);
+				color: var(--accent);
+				background: transparent;
+				font-family: 'Inter', sans-serif;
+				transition: all 0.15s;
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+			.btn-sm:hover {
+				background: var(--accent-g);
+			}
+			.btn-sm svg {
+				width: 12px;
+				height: 12px;
+				stroke: var(--accent);
+				fill: none;
+				stroke-width: 2;
+				stroke-linecap: round;
+			}
+
+			/* KIRIM JADVALI */
+			.table-head {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1.5fr 80px;
+				padding: 10px 22px;
+				font-size: 11px;
+				font-weight: 600;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				border-bottom: 1px solid var(--border);
+				background: var(--surface2);
+			}
+			.table-row {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1.5fr 80px;
+				padding: 13px 22px;
+				border-bottom: 1px solid var(--border);
+				align-items: center;
+				transition: background 0.15s;
+			}
+			.table-row:last-child {
+				border-bottom: none;
+			}
+			.table-row:hover {
+				background: var(--surface2);
+			}
+			.cell {
+				font-size: 13px;
+				color: var(--text);
+			}
+			.cell-muted {
+				font-size: 12.5px;
+				color: var(--muted2);
+			}
+			.badge {
+				display: inline-flex;
+				padding: 3px 10px;
+				border-radius: 20px;
+				font-size: 12px;
+				font-weight: 600;
+			}
+			.del-btn {
+				width: 28px;
+				height: 28px;
+				border-radius: 7px;
+				border: 1px solid var(--border);
+				background: transparent;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.15s;
+			}
+			.del-btn svg {
+				width: 12px;
+				height: 12px;
+				stroke: var(--coral);
+				fill: none;
+				stroke-width: 2;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			.del-btn:hover {
+				background: var(--coral-g);
+				border-color: var(--coral);
+			}
+
+			/* HAMIR ISHLATISH */
+			.hamir-panel {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 14px;
+				padding: 22px;
+				margin-top: 20px;
+			}
+			.hamir-head {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 18px;
+			}
+			.hamir-head h2 {
+				font-size: 14px;
+				font-weight: 600;
+				color: var(--text);
+			}
+			.hamir-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+				gap: 12px;
+			}
+			.hamir-card {
+				background: var(--surface2);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 14px;
+			}
+			.hamir-card-name {
+				font-size: 13px;
+				font-weight: 600;
+				color: var(--text);
+				margin-bottom: 10px;
+			}
+			.hamir-input-row {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.hamir-input {
+				flex: 1;
+				background: var(--bg);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				padding: 9px 12px;
+				font-size: 14px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				color: var(--text);
+				outline: none;
+				text-align: center;
+				transition: border-color 0.2s;
+			}
+			.hamir-input:focus {
+				border-color: var(--amber);
+			}
+			.hamir-unit {
+				font-size: 12px;
+				color: var(--muted2);
+				font-weight: 600;
+			}
+
+			/* EMPTY */
+			.empty-state {
+				padding: 40px 20px;
+				text-align: center;
+				color: var(--muted);
+			}
+			.empty-state svg {
+				width: 32px;
+				height: 32px;
+				stroke: var(--muted);
+				fill: none;
+				stroke-width: 1.5;
+				stroke-linecap: round;
+				display: block;
+				margin: 0 auto 10px;
+			}
+			.empty-state p {
+				font-size: 13.5px;
+				color: var(--muted2);
+			}
+
+			/* MODAL */
+			.modal-overlay {
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.6);
+				backdrop-filter: blur(4px);
+				z-index: 200;
+				display: none;
+				align-items: center;
+				justify-content: center;
+			}
+			.modal-overlay.open {
+				display: flex;
+			}
+			.modal {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 18px;
+				padding: 28px;
+				width: 100%;
+				max-width: 420px;
+				box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+				animation: modalIn 0.25s ease;
+			}
+			@keyframes modalIn {
+				from {
+					opacity: 0;
+					transform: scale(0.95);
+				}
+				to {
+					opacity: 1;
+					transform: scale(1);
+				}
+			}
+			.modal-head {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 22px;
+			}
+			.modal-head h3 {
+				font-size: 16px;
+				font-weight: 700;
+				color: var(--text);
+			}
+			.modal-close {
+				width: 30px;
+				height: 30px;
+				border-radius: 8px;
+				border: 1px solid var(--border);
+				background: transparent;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--muted);
+				font-size: 18px;
+			}
+			.modal-close:hover {
+				background: var(--coral-g);
+				color: var(--coral);
+			}
+			.form-field {
+				margin-bottom: 15px;
+			}
+			.form-field label {
+				display: block;
+				font-size: 11.5px;
+				font-weight: 600;
+				color: var(--muted);
+				text-transform: uppercase;
+				letter-spacing: 0.4px;
+				margin-bottom: 7px;
+			}
+			.form-field input {
+				width: 100%;
+				background: var(--bg);
+				border: 1px solid var(--border);
+				border-radius: 9px;
+				padding: 10px 14px;
+				font-size: 13.5px;
+				font-family: 'Inter', sans-serif;
+				color: var(--text);
+				outline: none;
+				transition: border-color 0.2s;
+			}
+			.form-field input:focus {
+				border-color: var(--accent);
+			}
+			.form-field input::placeholder {
+				color: var(--muted);
+			}
+			.modal-footer {
+				display: flex;
+				gap: 10px;
+				margin-top: 22px;
+			}
+			.btn-cancel {
+				flex: 1;
+				padding: 11px;
+				border: 1px solid var(--border);
+				border-radius: 9px;
+				background: transparent;
+				color: var(--muted2);
+				font-size: 13.5px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				cursor: pointer;
+			}
+			.btn-cancel:hover {
+				background: var(--surface2);
+			}
+			.btn-save {
+				flex: 2;
+				padding: 11px;
+				border: none;
+				border-radius: 9px;
+				background: var(--accent);
+				color: #fff;
+				font-size: 13.5px;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				cursor: pointer;
+			}
+
+			/* TOAST */
+			.toast {
+				position: fixed;
+				bottom: 24px;
+				right: 24px;
+				background: var(--green);
+				color: #fff;
+				padding: 12px 20px;
+				border-radius: 12px;
+				font-size: 13.5px;
+				font-weight: 600;
+				box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+				z-index: 999;
+				transform: translateY(80px);
+				opacity: 0;
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+			.toast.show {
+				transform: translateY(0);
+				opacity: 1;
+			}
+
+			::-webkit-scrollbar {
+				width: 5px;
+			}
+			::-webkit-scrollbar-track {
+				background: transparent;
+			}
+			::-webkit-scrollbar-thumb {
+				background: var(--border);
+				border-radius: 3px;
+			}
+			@keyframes fadeUp {
+				from {
+					opacity: 0;
+					transform: translateY(8px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+			.stat-card {
+				animation: fadeUp 0.3s ease both;
+			}
+			.stat-card:nth-child(1) {
+				animation-delay: 0.05s;
+			}
+			.stat-card:nth-child(2) {
+				animation-delay: 0.1s;
+			}
+			.stat-card:nth-child(3) {
+				animation-delay: 0.15s;
+			}
+			.stat-card:nth-child(4) {
+				animation-delay: 0.2s;
+			}
+			/* =========================================================
+   RESPONSIVE STYLES — "Ombor" sahifasi uchun
+   Mobil va Tablet moslashuvi
+   Asosiy CSS faylining OXIRIGA shu qismni qo'shing.
+   HTML o'zgarmaydi, faqat CSS qo'shiladi.
+   ========================================================= */
+
+			/* -----------------------------------------------------------
+   1) TABLET (≤1024px)
+   ----------------------------------------------------------- */
+			@media (max-width: 1024px) {
+				:root {
+					--sidebar-w: 200px;
+				}
+
+				.content {
+					padding: 20px;
+				}
+
+				.stats-grid {
+					grid-template-columns: repeat(2, 1fr);
+					gap: 14px;
+				}
+
+				.two-col {
+					grid-template-columns: 1fr;
+					gap: 16px;
+				}
+
+				.hamir-grid {
+					grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+				}
+
+				.table-head,
+				.table-row {
+					grid-template-columns: 1fr 1fr 1.2fr 60px;
+					padding-left: 18px;
+					padding-right: 18px;
+				}
+			}
+
+			/* -----------------------------------------------------------
+   2) KICHIK TABLET / KATTA TELEFON (≤860px)
+   Sidebar pastga bottom-nav bo'lib tushadi
+   ----------------------------------------------------------- */
+			@media (max-width: 860px) {
+				/* Bu sahifada body { overflow: hidden } bor.
+	   Mobil rejimda bu butun sahifa scroll'ini bloklab qo'yishi
+	   mumkin, shuning uchun ochib qo'yamiz va scroll'ni
+	   .main o'ziga oladi (pastroqda belgilangan). */
+				body {
+					overflow: visible;
+					flex-direction: column;
+				}
+
+				/* SIDEBAR -> PASTKI BOTTOM-NAV */
+				.sidebar {
+					position: fixed;
+					top: auto;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					width: 100%;
+					min-height: auto;
+					height: 64px;
+					flex-direction: row;
+					align-items: stretch;
+					border-right: none;
+					border-top: 1px solid var(--border);
+					z-index: 200;
+					background: rgba(18, 21, 29, 0.97);
+					backdrop-filter: blur(12px);
+				}
+
+				.sidebar-brand {
+					display: none;
+				}
+
+				.sidebar-nav {
+					display: flex;
+					flex-direction: row;
+					align-items: stretch;
+					gap: 2px;
+					padding: 6px 6px;
+					overflow-x: auto;
+					overflow-y: visible;
+					flex: 1;
+					-webkit-overflow-scrolling: touch;
+					scrollbar-width: none;
+				}
+				.sidebar-nav::-webkit-scrollbar {
+					display: none;
+				}
+
+				.nav-section {
+					display: flex;
+					align-items: stretch;
+					gap: 2px;
+					margin-bottom: 0;
+					flex-shrink: 0;
+					width: 100%;
+				}
+
+				.nav-label {
+					display: none;
+				}
+
+				.nav-item {
+					flex: 1;
+					min-width: 60px;
+					flex-direction: column;
+					justify-content: center;
+					gap: 3px;
+					padding: 6px 4px;
+					white-space: nowrap;
+					font-size: 9.5px;
+					text-align: center;
+					margin-bottom: 0;
+					position: relative;
+					border-radius: 10px;
+				}
+				.nav-item svg {
+					width: 19px;
+					height: 19px;
+				}
+
+				.sidebar-footer {
+					border-top: none;
+					border-left: 1px solid var(--border);
+					padding: 6px;
+					flex-shrink: 0;
+					display: flex;
+					align-items: center;
+					gap: 2px;
+				}
+				.user-card {
+					padding: 6px;
+					flex-direction: column;
+					gap: 2px;
+					background: transparent;
+					border-radius: 10px;
+				}
+				.user-avatar {
+					width: 26px;
+					height: 26px;
+					font-size: 11px;
+				}
+				.user-info {
+					display: none;
+				}
+				.logout-btn {
+					margin-top: 0;
+					padding: 6px;
+					flex-direction: column;
+					gap: 2px;
+					border-radius: 10px;
+				}
+				.logout-btn span {
+					display: none;
+				}
+
+				.main {
+					margin-left: 0;
+					padding-bottom: 64px;
+					overflow-y: auto;
+				}
+
+				.topbar {
+					padding: 0 16px;
+					height: auto;
+					min-height: 54px;
+					flex-wrap: wrap;
+					gap: 10px;
+					padding-top: 10px;
+					padding-bottom: 10px;
+				}
+				.topbar-left h1 {
+					font-size: 14.5px;
+				}
+				.topbar-left p {
+					font-size: 11px;
+				}
+				.topbar-right {
+					flex-wrap: wrap;
+				}
+				.btn-primary,
+				.btn-danger {
+					padding: 8px 14px;
+					font-size: 12.5px;
+				}
+
+				.stats-grid {
+					grid-template-columns: repeat(2, 1fr);
+				}
+
+				.hamir-grid {
+					grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+				}
+			}
+
+			/* -----------------------------------------------------------
+   3) TELEFON (≤640px)
+   ----------------------------------------------------------- */
+			@media (max-width: 640px) {
+				.content {
+					padding: 14px;
+				}
+
+				.btn-primary span,
+				.btn-danger span {
+					display: none; /* faqat ikonka qoladi, matn yashiriladi */
+				}
+				.btn-primary,
+				.btn-danger {
+					padding: 9px 12px;
+				}
+
+				.month-tabs {
+					gap: 5px;
+					margin-bottom: 18px;
+				}
+				.month-tab {
+					padding: 5px 11px;
+					font-size: 11px;
+				}
+
+				/* STAT KARTALAR: bitta ustun */
+				.stats-grid {
+					grid-template-columns: 1fr;
+					gap: 10px;
+					margin-bottom: 18px;
+				}
+				.stat-card {
+					padding: 16px;
+				}
+				.stat-value {
+					font-size: 20px;
+				}
+
+				.two-col {
+					gap: 12px;
+				}
+
+				.panel-head {
+					padding: 14px 16px;
+				}
+				.panel-head h2 {
+					font-size: 13px;
+				}
+				.btn-sm {
+					padding: 5px 11px;
+					font-size: 11.5px;
+				}
+				.btn-sm span {
+					display: none; /* faqat ikonka qoladi */
+				}
+
+				/* ============================================
+	   KIRIM JADVALI -> CARD-LIST KO'RINISHI
+	   Header yashiriladi, qator karta bo'ladi.
+	   Ustun tartibi: cell(sana/turi) -> cell(miqdor) ->
+	   cell-muted/badge(izoh) -> del-btn
+	   ============================================ */
+				.table-head {
+					display: none;
+				}
+
+				.table-row {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					grid-template-areas:
+						'c1 c2'
+						'c3 del';
+					gap: 8px 10px;
+					background: var(--surface2);
+					border: 1px solid var(--border);
+					border-radius: 12px;
+					margin: 8px;
+					padding: 12px 14px;
+				}
+				.table-row > *:nth-child(1) {
+					grid-area: c1;
+				}
+				.table-row > *:nth-child(2) {
+					grid-area: c2;
+				}
+				.table-row > *:nth-child(3) {
+					grid-area: c3;
+				}
+				.table-row > *:nth-child(4) {
+					grid-area: del;
+					justify-self: end;
+					align-self: center;
+				}
+
+				.cell,
+				.cell-muted {
+					font-size: 12.5px;
+				}
+
+				/* HAMIR PANEL */
+				.hamir-panel {
+					padding: 16px;
+					margin-top: 16px;
+				}
+				.hamir-head h2 {
+					font-size: 13px;
+				}
+				.hamir-grid {
+					grid-template-columns: repeat(2, 1fr);
+					gap: 10px;
+				}
+				.hamir-card {
+					padding: 12px;
+				}
+				.hamir-card-name {
+					font-size: 12px;
+					margin-bottom: 8px;
+				}
+				.hamir-input {
+					padding: 8px 10px;
+					font-size: 13px;
+				}
+
+				/* MODAL: pastdan chiqadigan sheet ko'rinishi */
+				.modal-overlay {
+					padding: 16px;
+					align-items: flex-end;
+				}
+				.modal {
+					padding: 20px;
+					max-width: 100%;
+					border-radius: 16px 16px 0 0;
+					animation: modalInMobile 0.25s ease;
+				}
+				@keyframes modalInMobile {
+					from {
+						opacity: 0;
+						transform: translateY(20px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+				.modal-footer {
+					flex-direction: column-reverse;
+				}
+				.btn-cancel,
+				.btn-save {
+					flex: 1;
+					width: 100%;
+				}
+
+				/* TOAST: bottom-nav bilan to'qnashmasligi uchun yuqoriroqqa */
+				.toast {
+					bottom: 76px;
+					right: 14px;
+					left: 14px;
+					text-align: center;
+					font-size: 12.5px;
+					padding: 11px 16px;
+				}
+			}
+
+			/* -----------------------------------------------------------
+   4) JUDA KICHIK TELEFON (≤380px)
+   ----------------------------------------------------------- */
+			@media (max-width: 380px) {
+				.hamir-grid {
+					grid-template-columns: 1fr;
+				}
+				.topbar-left h1 {
+					font-size: 13.5px;
+				}
+				.nav-item {
+					font-size: 9px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- SIDEBAR -->
+		<aside class="sidebar">
+			<div class="sidebar-brand">
+				<div class="brand-logo">
+					<svg viewBox="0 0 24 24">
+						<path d="M12 2L2 7l10 5 10-5-10-5z" />
+						<path d="M2 17l10 5 10-5" />
+						<path d="M2 12l10 5 10-5" />
+					</svg>
+				</div>
+				<div class="brand-text"><strong>Pinchuza</strong><span>Boshqaruv tizimi</span></div>
+			</div>
+			<nav class="sidebar-nav">
+				<div class="nav-section">
+					<div class="nav-label">Asosiy</div>
+					<a class="nav-item" href="../dashboard.html"
+						><svg viewBox="0 0 24 24">
+							<rect x="3" y="3" width="7" height="7" rx="1" />
+							<rect x="14" y="3" width="7" height="7" rx="1" />
+							<rect x="3" y="14" width="7" height="7" rx="1" />
+							<rect x="14" y="14" width="7" height="7" rx="1" /></svg
+						>Dashboard</a
+					>
+					<a class="nav-item" href="ishchilar.html"
+						><svg viewBox="0 0 24 24">
+							<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+							<circle cx="9" cy="7" r="4" /></svg
+						>Ishchilar</a
+					>
+					<a class="nav-item" href="ish-hisobi.html"
+						><svg viewBox="0 0 24 24">
+							<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+							<rect x="9" y="3" width="6" height="4" rx="1" /></svg
+						>Ish hisobi</a
+					>
+				</div>
+				<div class="nav-section">
+					<div class="nav-label">Omborxona</div>
+					<a class="nav-item active" href="#"
+						><svg viewBox="0 0 24 24">
+							<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+							<polyline points="9 22 9 12 15 12 15 22" /></svg
+						>Ombor</a
+					>
+					<a class="nav-item" href="../pages/savdo.html"
+						><svg viewBox="0 0 24 24">
+							<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+							<line x1="3" y1="6" x2="21" y2="6" />
+							<path d="M16 10a4 4 0 01-8 0" /></svg
+						>Savdo</a
+					>
+				</div>
+				<div class="nav-section">
+					<div class="nav-label">Hisobotlar</div>
+					<a class="nav-item" href="hisobot.html"
+						><svg viewBox="0 0 24 24">
+							<line x1="18" y1="20" x2="18" y2="10" />
+							<line x1="12" y1="20" x2="12" y2="4" />
+							<line x1="6" y1="20" x2="6" y2="14" /></svg
+						>Oylik hisobot</a
+					>
+					<a class="nav-item" href="maosh.html"
+						><svg viewBox="0 0 24 24">
+							<circle cx="12" cy="12" r="10" />
+							<polyline points="12 6 12 12 16 14" /></svg
+						>Maosh hisobi</a
+					>
+				</div>
+			</nav>
+			<div class="sidebar-footer">
+				<div class="user-card">
+					<div class="user-avatar">A</div>
+					<div class="user-info">
+						<div class="user-name">Admin</div>
+						<div class="user-role">Bosh administrator</div>
+					</div>
+				</div>
+				<div class="logout-btn" id="logoutBtn">
+					<svg viewBox="0 0 24 24">
+						<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+						<polyline points="16 17 21 12 16 7" />
+						<line x1="21" y1="12" x2="9" y2="12" />
+					</svg>
+					Chiqish
+				</div>
+			</div>
+		</aside>
+
+		<!-- MAIN -->
+		<main class="main">
+			<div class="topbar">
+				<div class="topbar-left">
+					<h1>Omborxona</h1>
+					<p id="topbarSub">Kraxmal kirim va chiqim hisobi</p>
+				</div>
+				<div class="topbar-right">
+					<button class="btn-primary" id="addKirimBtn">
+						<svg viewBox="0 0 24 24">
+							<line x1="12" y1="5" x2="12" y2="19" />
+							<line x1="5" y1="12" x2="19" y2="12" />
+						</svg>
+						Kirim qo'shish
+					</button>
+				</div>
+			</div>
+
+			<div class="content">
+				<!-- OY TANLASH -->
+				<div class="month-tabs" id="monthTabs"></div>
+
+				<!-- STATS -->
+				<div class="stats-grid">
+					<div class="stat-card sc-green">
+						<div class="stat-icon">
+							<svg viewBox="0 0 24 24">
+								<polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+								<polyline points="17 6 23 6 23 12" />
+							</svg>
+						</div>
+						<div class="stat-label">Oy kirimi</div>
+						<div class="stat-value" id="statKirim">0<span class="stat-unit">t</span></div>
+						<div class="progress-wrap">
+							<div class="progress-bar">
+								<div class="progress-fill" id="prKirim" style="width: 0%; background: var(--green)"></div>
+							</div>
+						</div>
+					</div>
+					<div class="stat-card sc-amber">
+						<div class="stat-icon">
+							<svg viewBox="0 0 24 24">
+								<path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+								<path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+							</svg>
+						</div>
+						<div class="stat-label">Ishlatilgan</div>
+						<div class="stat-value" id="statIshlatilgan">0<span class="stat-unit">t</span></div>
+						<div class="progress-wrap">
+							<div class="progress-bar">
+								<div class="progress-fill" id="prIshlatilgan" style="width: 0%; background: var(--amber)"></div>
+							</div>
+						</div>
+					</div>
+					<div class="stat-card sc-coral">
+						<div class="stat-icon">
+							<svg viewBox="0 0 24 24">
+								<polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+								<polyline points="17 18 23 18 23 12" />
+							</svg>
+						</div>
+						<div class="stat-label">Qoldiq</div>
+						<div class="stat-value" id="statQoldiq">0<span class="stat-unit">t</span></div>
+						<div class="progress-wrap">
+							<div class="progress-bar">
+								<div class="progress-fill" id="prQoldiq" style="width: 0%; background: var(--coral)"></div>
+							</div>
+						</div>
+					</div>
+					<div class="stat-card sc-purple">
+						<div class="stat-icon">
+							<svg viewBox="0 0 24 24">
+								<rect x="2" y="3" width="20" height="14" rx="2" />
+								<line x1="8" y1="21" x2="16" y2="21" />
+								<line x1="12" y1="17" x2="12" y2="21" />
+							</svg>
+						</div>
+						<div class="stat-label">Kirim soni</div>
+						<div class="stat-value" id="statKirimSoni">0<span class="stat-unit">ta</span></div>
+						<div class="progress-wrap">
+							<div class="progress-bar">
+								<div class="progress-fill" id="prKirimSoni" style="width: 100%; background: var(--purple)"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- JADVALLAR -->
+				<div class="two-col">
+					<!-- KIRIM -->
+					<div class="panel">
+						<div class="panel-head">
+							<h2>Kraxmal kirim</h2>
+							<button class="btn-sm" id="addKirimBtn2">
+								<svg viewBox="0 0 24 24">
+									<line x1="12" y1="5" x2="12" y2="19" />
+									<line x1="5" y1="12" x2="19" y2="12" />
+								</svg>
+								Qo'shish
+							</button>
+						</div>
+						<div class="table-head">
+							<div>Sana</div>
+							<div>Miqdor</div>
+							<div>Izoh</div>
+							<div></div>
+						</div>
+						<div id="kirimList"></div>
+					</div>
+
+					<!-- HAMIR ISHLATISH -->
+					<div class="panel">
+						<div class="panel-head">
+							<h2>Hamir qiluvchilar iste'moli</h2>
+							<button class="btn-sm" id="saveHamirBtn">
+								<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+								Saqlash
+							</button>
+						</div>
+						<div style="padding: 16px 22px">
+							<p style="font-size: 12.5px; color: var(--muted); margin-bottom: 14px">
+								Har bir hamir qiluvchi necha kg kraxmal ishlatganini kiriting
+							</p>
+							<div class="hamir-grid" id="hamirGrid"></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- OYLIK JAMI -->
+				<div class="hamir-panel" style="margin-top: 20px">
+					<div class="hamir-head">
+						<h2>Oylik ombor xulosasi</h2>
+						<span id="monthLabel" style="font-size: 12px; color: var(--muted)"></span>
+					</div>
+					<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px">
+						<div style="background: var(--surface2); border-radius: 10px; padding: 16px; text-align: center">
+							<div
+								style="
+									font-size: 11px;
+									color: var(--muted);
+									text-transform: uppercase;
+									letter-spacing: 0.5px;
+									margin-bottom: 8px;
+								">
+								Jami kirim
+							</div>
+							<div style="font-size: 22px; font-weight: 700; color: var(--green)" id="xlKirim">0 t</div>
+						</div>
+						<div style="background: var(--surface2); border-radius: 10px; padding: 16px; text-align: center">
+							<div
+								style="
+									font-size: 11px;
+									color: var(--muted);
+									text-transform: uppercase;
+									letter-spacing: 0.5px;
+									margin-bottom: 8px;
+								">
+								Jami iste'mol
+							</div>
+							<div style="font-size: 22px; font-weight: 700; color: var(--amber)" id="xlIshlatilgan">0 t</div>
+						</div>
+						<div style="background: var(--surface2); border-radius: 10px; padding: 16px; text-align: center">
+							<div
+								style="
+									font-size: 11px;
+									color: var(--muted);
+									text-transform: uppercase;
+									letter-spacing: 0.5px;
+									margin-bottom: 8px;
+								">
+								Qoldiq
+							</div>
+							<div style="font-size: 22px; font-weight: 700" id="xlQoldiq" style="color: var(--text)">0 t</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<!-- KIRIM MODAL -->
+		<div class="modal-overlay" id="kirimModal">
+			<div class="modal">
+				<div class="modal-head">
+					<h3>Kraxmal kirim qo'shish</h3>
+					<button class="modal-close" onclick="closeKirimModal()">✕</button>
+				</div>
+				<div class="form-field">
+					<label>Miqdor (tonna) *</label>
+					<input type="number" id="kMiqdor" placeholder="0.0" min="0" step="0.1" />
+				</div>
+				<div class="form-field">
+					<label>Sana *</label>
+					<input type="date" id="kSana" />
+				</div>
+				<div class="form-field">
+					<label>Izoh (ixtiyoriy)</label>
+					<input type="text" id="kIzoh" placeholder="Yetkazib beruvchi nomi..." />
+				</div>
+				<div class="modal-footer">
+					<button class="btn-cancel" onclick="closeKirimModal()">Bekor qilish</button>
+					<button class="btn-save" onclick="saveKirim()">Saqlash</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="toast" id="toast"></div>
+
+		<script>
+			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			document.getElementById('logoutBtn').addEventListener('click', () => {
+				if (confirm('Tizimdan chiqasizmi?')) {
+					localStorage.removeItem('pinchuza_auth');
+					window.location.href = '../index.html';
+				}
+			});
+
+			function getData(key) {
+				try {
+					return JSON.parse(localStorage.getItem(key) || 'null');
+				} catch {
+					return null;
+				}
+			}
+			function setData(key, val) {
+				localStorage.setItem(key, JSON.stringify(val));
+			}
+			function genId() {
+				return Date.now().toString(36) + Math.random().toString(36).slice(2);
+			}
+			function getWorkers() {
+				return getData('pinchuza_workers') || [];
+			}
+
+			const MONTHS = [
+				'Yanvar',
+				'Fevral',
+				'Mart',
+				'Aprel',
+				'May',
+				'Iyun',
+				'Iyul',
+				'Avgust',
+				'Sentabr',
+				'Oktabr',
+				'Noyabr',
+				'Dekabr',
+			];
+			const now = new Date();
+			let activeYear = now.getFullYear();
+			let activeMonth = now.getMonth();
+
+			function getMonthKey() {
+				return activeYear + '-' + String(activeMonth + 1).padStart(2, '0');
+			}
+
+			// OY TABLAR
+			function renderMonthTabs() {
+				const tabs = document.getElementById('monthTabs');
+				tabs.innerHTML = MONTHS.map(
+					(name, i) => `
+    <div class="month-tab${i === activeMonth ? ' active' : ''}" onclick="selectMonth(${i})">${name}</div>
+  `,
+				).join('');
+				document.getElementById('monthLabel').textContent = MONTHS[activeMonth] + ' ' + activeYear;
+				document.getElementById('topbarSub').textContent = MONTHS[activeMonth] + ' ' + activeYear + ' — kraxmal hisobi';
+			}
+
+			function selectMonth(i) {
+				activeMonth = i;
+				renderAll();
+			}
+
+			// MA'LUMOTLAR
+			function getOmborData() {
+				return getData('pinchuza_ombor_' + getMonthKey()) || { kirimlar: [], hamirIste: {} };
+			}
+			function saveOmborData(d) {
+				setData('pinchuza_ombor_' + getMonthKey(), d);
+			}
+
+			// Ish hisobidan hamir qiluvchilarning oylik iste'molini avtomatik hisoblash (kg)
+			function getHamirFromIshHisobi() {
+				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
+				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
+				let total = 0;
+				const perWorker = {};
+				workers.forEach(w => {
+					perWorker[w.id] = 0;
+				});
+				for (let day = 1; day <= daysInMonth; day++) {
+					const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+					const ishData = getData('pinchuza_ish_' + dayKey) || {};
+					workers.forEach(w => {
+						const rec = ishData[w.id];
+						if (rec && rec.miqdor) {
+							const val = parseFloat(rec.miqdor) || 0;
+							total += val;
+							perWorker[w.id] = (perWorker[w.id] || 0) + val;
+						}
+					});
+				}
+				return { total, perWorker };
+			}
+
+			// STATS
+			function renderStats() {
+				const d = getOmborData();
+				const kirimlar = d.kirimlar || [];
+				const totalKirimT = kirimlar.reduce((s, x) => s + (parseFloat(x.miqdor) || 0), 0);
+				const hamirHisob = getHamirFromIshHisobi();
+				const totalIshlatilganKg = hamirHisob.total;
+				const totalIshlatilganT = totalIshlatilganKg / 1000;
+				const kirimKg = totalKirimT * 1000;
+				const qoldiqKg = Math.max(0, kirimKg - totalIshlatilganKg);
+				const qoldiqT = qoldiqKg / 1000;
+				const max = totalKirimT || 1;
+				document.getElementById('statKirim').innerHTML = totalKirimT.toFixed(1) + '<span class=stat-unit>t</span>';
+				document.getElementById('statIshlatilgan').innerHTML = totalIshlatilganKg.toFixed(1) + '<span class=stat-unit>kg</span>';
+				document.getElementById('statQoldiq').innerHTML = qoldiqT.toFixed(2) + '<span class=stat-unit>t</span>';
+				document.getElementById('statKirimSoni').innerHTML = kirimlar.length + '<span class=stat-unit>ta</span>';
+				document.getElementById('prKirim').style.width = '100%';
+				document.getElementById('prIshlatilgan').style.width = Math.min(100, (totalIshlatilganT / max) * 100).toFixed(0) + '%';
+				document.getElementById('prQoldiq').style.width = Math.min(100, (qoldiqT / max) * 100).toFixed(0) + '%';
+				document.getElementById('xlKirim').textContent = totalKirimT.toFixed(1) + ' t';
+				document.getElementById('xlIshlatilgan').textContent = totalIshlatilganKg.toFixed(1) + ' kg';
+				const xlQoldiq = document.getElementById('xlQoldiq');
+				xlQoldiq.textContent = qoldiqT.toFixed(2) + ' t (' + qoldiqKg.toFixed(0) + ' kg)';
+				xlQoldiq.style.color = qoldiqKg < 500 ? 'var(--coral)' : qoldiqKg < 2000 ? 'var(--amber)' : 'var(--green)';
+				setData('pinchuza_ombor_stats_' + getMonthKey(), {
+					kirim: totalKirimT,
+					ishlatilganKg: totalIshlatilganKg,
+					qoldiqT,
+					qoldiqKg,
+				});
+			}
+
+			// KIRIM JADVALI
+			function renderKirimList() {
+				const d = getOmborData();
+				const kirimlar = (d.kirimlar || []).slice().reverse();
+				const el = document.getElementById('kirimList');
+
+				if (kirimlar.length === 0) {
+					el.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><p>Hali kirim yo'q</p></div>`;
+					return;
+				}
+
+				el.innerHTML = kirimlar
+					.map(k => {
+						const sana = k.sana ? new Date(k.sana + 'T00:00:00') : null;
+						const sanaText = sana ? sana.getDate() + ' ' + MONTHS[sana.getMonth()] : '—';
+						return `<div class="table-row">
+      <div class="cell">${sanaText}</div>
+      <div><span class="badge" style="background:var(--green-g);color:var(--green)">${parseFloat(k.miqdor).toFixed(1)} t</span></div>
+      <div class="cell-muted">${k.izoh || '—'}</div>
+      <div><button class="del-btn" onclick="deleteKirim('${k.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button></div>
+    </div>`;
+					})
+					.join('');
+			}
+
+			function deleteKirim(id) {
+				if (!confirm("Bu kirimni o'chirasizmi?")) return;
+				const d = getOmborData();
+				d.kirimlar = (d.kirimlar || []).filter(k => k.id !== id);
+				saveOmborData(d);
+				renderAll();
+				showToast("O'chirildi");
+			}
+
+			// KIRIM MODAL
+			document.getElementById('addKirimBtn').addEventListener('click', openKirimModal);
+			document.getElementById('addKirimBtn2').addEventListener('click', openKirimModal);
+
+			function openKirimModal() {
+				document.getElementById('kSana').value = now.toISOString().split('T')[0];
+				document.getElementById('kirimModal').classList.add('open');
+			}
+			function closeKirimModal() {
+				document.getElementById('kirimModal').classList.remove('open');
+				document.getElementById('kMiqdor').value = '';
+				document.getElementById('kIzoh').value = '';
+			}
+			function saveKirim() {
+				const miqdor = parseFloat(document.getElementById('kMiqdor').value);
+				const sana = document.getElementById('kSana').value;
+				const izoh = document.getElementById('kIzoh').value.trim();
+				if (!miqdor || miqdor <= 0) {
+					alert('Miqdor kiritilishi shart!');
+					return;
+				}
+				if (!sana) {
+					alert('Sana kiritilishi shart!');
+					return;
+				}
+				const d = getOmborData();
+				if (!d.kirimlar) d.kirimlar = [];
+				d.kirimlar.push({ id: genId(), miqdor, sana, izoh, qoshilgan: new Date().toISOString() });
+				saveOmborData(d);
+				closeKirimModal();
+				renderAll();
+				showToast('Kirim saqlandi! +' + miqdor + ' t');
+			}
+
+			// HAMIR ISHLATISH
+			function renderHamirGrid() {
+				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
+				const d = getOmborData();
+				const hamirIste = d.hamirIste || {};
+				const grid = document.getElementById('hamirGrid');
+
+				if (workers.length === 0) {
+					grid.innerHTML = `<div style="color:var(--muted);font-size:13px;grid-column:1/-1">Hamir qiluvchilar qo'shilmagan. <a href="ishchilar.html" style="color:var(--accent)">Ishchilar</a> sahifasida qo'shing.</div>`;
+					return;
+				}
+
+				grid.innerHTML = workers
+					.map(w => {
+						const val = hamirIste[w.id] || '';
+						const initials = ((w.ism || '?')[0] + (w.familiya ? w.familiya[0] : '')).toUpperCase();
+						return `<div class="hamir-card">
+      <div class="hamir-card-name">${initials} ${w.ism || ''} ${w.familiya || ''}</div>
+      <div class="hamir-input-row">
+        <input class="hamir-input" type="number" min="0" step="0.1"
+          id="hamir-${w.id}" value="${val}" placeholder="0"/>
+        <span class="hamir-unit">kg</span>
+      </div>
+    </div>`;
+					})
+					.join('');
+			}
+
+			document.getElementById('saveHamirBtn').addEventListener('click', () => {
+				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
+				const d = getOmborData();
+				if (!d.hamirIste) d.hamirIste = {};
+				workers.forEach(w => {
+					const inp = document.getElementById('hamir-' + w.id);
+					if (inp) {
+						const val = parseFloat(inp.value);
+						d.hamirIste[w.id] = isNaN(val) ? 0 : val;
+					}
+				});
+				saveOmborData(d);
+				renderAll();
+				showToast("Iste'mol saqlandi!");
+			});
+
+			// TOAST
+			function showToast(msg) {
+				const t = document.getElementById('toast');
+				t.textContent = msg;
+				t.classList.add('show');
+				setTimeout(() => t.classList.remove('show'), 2500);
+			}
+
+			document.addEventListener('keydown', e => {
+				if (e.key === 'Escape') closeKirimModal();
+			});
+
+			function renderAll() {
+				renderMonthTabs();
+				renderStats();
+				renderKirimList();
+				renderHamirGrid();
+			}
+
+			// Sana default
+			document.getElementById('kSana').value = now.toISOString().split('T')[0];
+			renderAll();
+		</script>
+	</body>
+</html>
