@@ -5,6 +5,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Pinchuza — Kirish</title>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<script src="api.js"></script>
+
 		<style>
 			*,
 			*::before,
@@ -368,13 +370,10 @@
 			</div>
 		</div>
 		<script>
-			const ADMIN = { username: 'Nuriddin', password: 'pinchuza123' };
-
 			// Allaqachon login qilingan bo'lsa dashboardga
-			if (localStorage.getItem('pinchuza_auth')) {
+			if (Auth.isLoggedIn()) {
 				window.location.href = 'dashboard.html';
 			}
-
 			const loginBtn = document.getElementById('loginBtn');
 			const usernameInput = document.getElementById('username');
 			const passwordInput = document.getElementById('password');
@@ -398,37 +397,26 @@
 			);
 			loginBtn.addEventListener('click', doLogin);
 
-			function doLogin() {
+			async function doLogin() {
 				const u = usernameInput.value.trim();
 				const p = passwordInput.value.trim();
 				errorMsg.classList.remove('show');
-
 				if (!u || !p) {
 					showError("Barcha maydonlarni to'ldiring");
 					return;
 				}
-
 				loginBtn.classList.add('loading');
-				setTimeout(() => {
+				try {
+					await Auth.login(u, p);
+					loginBtn.style.background = 'var(--success)';
+					loginBtn.querySelector('.btn-text').textContent = 'Kirish muvaffaqiyatli...';
+					setTimeout(() => {
+						window.location.href = 'dashboard.html';
+					}, 700);
+				} catch (e) {
 					loginBtn.classList.remove('loading');
-					if (u === ADMIN.username && p === ADMIN.password) {
-						localStorage.setItem(
-							'pinchuza_auth',
-							JSON.stringify({
-								user: 'admin',
-								name: 'Admin',
-								loginTime: Date.now(),
-							}),
-						);
-						loginBtn.style.background = 'var(--success)';
-						loginBtn.querySelector('.btn-text').textContent = 'Kirish muvaffaqiyatli...';
-						setTimeout(() => {
-							window.location.href = 'dashboard.html';
-						}, 700);
-					} else {
-						showError("Foydalanuvchi nomi yoki parol noto'g'ri");
-					}
-				}, 900);
+					showError(e.message || "Foydalanuvchi nomi yoki parol noto'g'ri");
+				}
 			}
 
 			function showError(msg) {

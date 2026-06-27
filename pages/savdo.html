@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Pinchuza — Savdo</title>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<script src="../api.js"></script>
 		<style>
 			*,
 			*::before,
@@ -1316,13 +1317,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Hisobotlar</div>
-					<a class="nav-item" href="hisobot.html"
-						><svg viewBox="0 0 24 24">
-							<line x1="18" y1="20" x2="18" y2="10" />
-							<line x1="12" y1="20" x2="12" y2="4" />
-							<line x1="6" y1="20" x2="6" y2="14" /></svg
-						>Oylik hisobot</a
-					>
+
 					<a class="nav-item" href="maosh.html"
 						><svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="10" />
@@ -1501,24 +1496,12 @@
 		</div>
 
 		<script>
-			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			// AUTH
+			Auth.check();
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = '../index.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
-			function getData(key) {
-				try {
-					return JSON.parse(localStorage.getItem(key) || 'null');
-				} catch {
-					return null;
-				}
-			}
-			function setData(key, val) {
-				localStorage.setItem(key, JSON.stringify(val));
-			}
 			function genId() {
 				return Date.now().toString(36) + Math.random().toString(36).slice(2);
 			}
@@ -1550,15 +1533,31 @@
 			let activeMonth = now.getMonth();
 			let editingId = null;
 			let searchQ = '';
+			let savdoCache = [];
 
 			function getMonthKey() {
 				return activeYear + '-' + String(activeMonth + 1).padStart(2, '0');
 			}
-			function getSavdoList() {
-				return getData('pinchuza_savdo_' + getMonthKey()) || [];
+
+			// MA'LUMOT YUKLASH
+			async function loadData() {
+				try {
+					const rows = await Savdo.getOylik(activeYear, activeMonth + 1);
+					savdoCache = rows.map(r => ({
+						id: r.id,
+						mijoz: r.mijoz,
+						qop: r.qop,
+						qopHajm: r.qop_hajm,
+						sana: r.sana ? r.sana.split('T')[0] : r.sana,
+						izoh: r.izoh,
+					}));
+				} catch {
+					savdoCache = [];
+				}
 			}
-			function saveSavdoList(arr) {
-				setData('pinchuza_savdo_' + getMonthKey(), arr);
+
+			function getSavdoList() {
+				return savdoCache;
 			}
 
 			// OY TABLAR
@@ -1571,8 +1570,9 @@
 				document.getElementById('mijozOyLabel').textContent = MONTHS[activeMonth] + ' ' + activeYear;
 			}
 
-			function selectMonth(i) {
+			async function selectMonth(i) {
 				activeMonth = i;
+				await loadData();
 				renderAll();
 			}
 
@@ -1580,13 +1580,12 @@
 			function renderStats() {
 				const list = getSavdoList();
 				const totalQop = list.reduce((s, x) => s + (parseInt(x.qop) || 0), 0);
-				const mijozSet = new Set(list.map(x => x.mijoz.toLowerCase().trim()));
+				const mijozSet = new Set(list.map(x => (x.mijoz || '').toLowerCase().trim()));
 				const mijozSoni = mijozSet.size;
 
-				// Eng ko'p mijoz
 				const mijozMap = {};
 				list.forEach(x => {
-					const key = x.mijoz.toLowerCase().trim();
+					const key = (x.mijoz || '').toLowerCase().trim();
 					mijozMap[key] = (mijozMap[key] || 0) + (parseInt(x.qop) || 0);
 				});
 				const sorted = Object.entries(mijozMap).sort((a, b) => b[1] - a[1]);
@@ -1713,8 +1712,13 @@
 			}
 
 			function updateMijozDatalist() {
-				const list = getSavdoList();
-				const mijozlar = [...new Set(list.map(x => x.mijoz).filter(Boolean))];
+				const mijozlar = [
+					...new Set(
+						getSavdoList()
+							.map(x => x.mijoz)
+							.filter(Boolean),
+					),
+				];
 				document.getElementById('mijozlarList_dl').innerHTML = mijozlar.map(m => `<option value="${m}"></option>`).join('');
 			}
 
@@ -1724,8 +1728,7 @@
 			});
 
 			function editSavdo(id) {
-				const list = getSavdoList();
-				const s = list.find(x => x.id === id);
+				const s = getSavdoList().find(x => x.id === id);
 				if (!s) return;
 				editingId = id;
 				document.getElementById('fMijoz').value = s.mijoz || '';
@@ -1736,7 +1739,7 @@
 				openModal('Savdoni tahrirlash');
 			}
 
-			function saveSavdo() {
+			async function saveSavdo() {
 				const mijoz = document.getElementById('fMijoz').value.trim();
 				const qop = parseInt(document.getElementById('fQop').value);
 				const qopHajm = document.getElementById('fQopHajm').value.trim();
@@ -1756,28 +1759,33 @@
 					return;
 				}
 
-				let list = getSavdoList();
-				if (editingId) {
-					const idx = list.findIndex(x => x.id === editingId);
-					if (idx !== -1) list[idx] = { ...list[idx], mijoz, qop, qopHajm: qopHajm || null, sana, izoh };
-				} else {
-					list.push({ id: genId(), mijoz, qop, qopHajm: qopHajm || null, sana, izoh, qoshilgan: new Date().toISOString() });
+				try {
+					if (editingId) {
+						await Savdo.update(editingId, { mijoz, qop, qop_hajm: qopHajm || null, sana, izoh });
+					} else {
+						await Savdo.add({ id: genId(), mijoz, qop, qop_hajm: qopHajm || null, sana, izoh });
+					}
+					closeModal();
+					await loadData();
+					renderAll();
+					showToast(editingId ? 'Yangilandi!' : `${mijoz} — ${qop} qop saqlandi!`);
+				} catch (e) {
+					showToast('Xato: ' + e.message);
 				}
-
-				saveSavdoList(list);
-				closeModal();
-				renderAll();
-				showToast(editingId ? 'Yangilandi!' : `${mijoz} — ${qop} qop saqlandi!`);
 			}
 
-			function deleteSavdo(id) {
-				const list = getSavdoList();
-				const s = list.find(x => x.id === id);
+			async function deleteSavdo(id) {
+				const s = getSavdoList().find(x => x.id === id);
 				if (!s) return;
 				if (!confirm(`"${s.mijoz}" — ${s.qop} qop o'chirilsinmi?`)) return;
-				saveSavdoList(list.filter(x => x.id !== id));
-				renderAll();
-				showToast("O'chirildi");
+				try {
+					await Savdo.delete(id);
+					await loadData();
+					renderAll();
+					showToast("O'chirildi");
+				} catch (e) {
+					showToast('Xato: ' + e.message);
+				}
 			}
 
 			// QIDIRUV
@@ -1806,7 +1814,9 @@
 			}
 
 			document.getElementById('fSana').value = now.toISOString().split('T')[0];
-			renderAll();
+
+			// ISHGA TUSHIRISH
+			loadData().then(() => renderAll());
 		</script>
 	</body>
 </html>

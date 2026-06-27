@@ -1350,6 +1350,7 @@
 				}
 			}
 		</style>
+		<script src="../api.js"></script>
 	</head>
 	<body>
 		<!-- SIDEBAR -->
@@ -1413,13 +1414,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Hisobotlar</div>
-					<a class="nav-item" href="#"
-						><svg viewBox="0 0 24 24">
-							<line x1="18" y1="20" x2="18" y2="10" />
-							<line x1="12" y1="20" x2="12" y2="4" />
-							<line x1="6" y1="20" x2="6" y2="14" /></svg
-						>Oylik hisobot</a
-					>
+
 					<a class="nav-item" href="../pages/maosh.html"
 						><svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="10" />
@@ -1620,37 +1615,14 @@
 
 		<script>
 			// AUTH
-			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			Auth.check();
 
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = '../index.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
-			// MA'LUMOTLAR
-			function getData(key) {
-				try {
-					return JSON.parse(localStorage.getItem(key) || 'null');
-				} catch {
-					return null;
-				}
-			}
-			function setData(key, val) {
-				localStorage.setItem(key, JSON.stringify(val));
-			}
-			function getWorkers() {
-				return getData('pinchuza_workers') || [];
-			}
-			function saveWorkers(arr) {
-				setData('pinchuza_workers', arr);
-			}
-			function genId() {
-				return Date.now().toString(36) + Math.random().toString(36).slice(2);
-			}
-
 			// STATE
+			let workersCache = [];
 			let activeLavozim = null;
 			let activeBaylovNarx = '4000';
 			let editingId = null;
@@ -1666,18 +1638,44 @@
 				Qirquvchi: { bg: 'var(--teal-g)', c: 'var(--teal)', cls: 'lc-qirquvchi' },
 			};
 
+			// ISHCHILAR
+			async function loadWorkers() {
+				try {
+					const rows = await Ishchilar.getAll();
+					// DB dan kelgan ustun nomlarini frontend formatiga o'girish
+					workersCache = rows.map(r => ({
+						id: r.id,
+						ism: r.ism,
+						familiya: r.familiya,
+						telefon: r.telefon,
+						lavozim: r.lavozim,
+						baylovNarx: r.baylov_narx,
+						qoshilgan: r.qoshilgan,
+					}));
+				} catch (e) {
+					console.error('Ishchilar yuklanmadi:', e);
+					workersCache = [];
+				}
+				return workersCache;
+			}
+
+			function getWorkers() {
+				return workersCache;
+			}
+
+			function genId() {
+				return Date.now().toString(36) + Math.random().toString(36).slice(2);
+			}
+
 			// LAVOZIM TANLASH
 			function selectLavozim(lav) {
 				activeLavozim = lav;
 				activeBaylovNarx = '4000';
-
 				document.querySelectorAll('.lavozim-card').forEach(c => {
 					c.classList.toggle('active', c.dataset.lavozim === lav);
 				});
-
 				const baylovTabs = document.getElementById('baylovTabs');
 				baylovTabs.style.display = lav === 'Baylovchi' ? 'flex' : 'none';
-
 				document.getElementById('panelTitle').textContent = lav + 'lar';
 				renderTable();
 			}
@@ -1694,7 +1692,6 @@
 			function renderTable() {
 				let workers = getWorkers();
 
-				// Lavozim filter
 				if (activeLavozim) {
 					workers = workers.filter(w => w.lavozim === activeLavozim);
 					if (activeLavozim === 'Baylovchi') {
@@ -1702,7 +1699,6 @@
 					}
 				}
 
-				// Qidiruv
 				if (searchQ) {
 					const q = searchQ.toLowerCase();
 					workers = workers.filter(
@@ -1777,8 +1773,7 @@
 			// HISOBLAGICHLAR
 			function updateCounts() {
 				const workers = getWorkers();
-				const lavozimlar = ['Baylovchi', 'Chiqaruvchi', 'Yuvuvchi', 'Qurutuvchi', 'Hamir qiluvchi', 'Qirquvchi'];
-				lavozimlar.forEach(lav => {
+				['Baylovchi', 'Chiqaruvchi', 'Yuvuvchi', 'Qurutuvchi', 'Hamir qiluvchi', 'Qirquvchi'].forEach(lav => {
 					const el = document.getElementById('cnt-' + lav);
 					if (el) el.textContent = workers.filter(w => w.lavozim === lav).length;
 				});
@@ -1797,7 +1792,7 @@
 				editingId = null;
 				document.getElementById('fIsm').value = '';
 				document.getElementById('fFamiliya').value = '';
-				document.getElementById('fTelefon').value = '';
+				document.getElementById('fTelefon').value = '+998 ';
 				document.getElementById('fLavozim').value = '';
 				document.getElementById('fBaylovNarx').value = '4000';
 				document.getElementById('baylovNarxField').style.display = 'none';
@@ -1820,20 +1815,19 @@
 			});
 
 			function editWorker(id) {
-				const workers = getWorkers();
-				const w = workers.find(x => x.id === id);
+				const w = getWorkers().find(x => x.id === id);
 				if (!w) return;
 				editingId = id;
 				document.getElementById('fIsm').value = w.ism || '';
 				document.getElementById('fFamiliya').value = w.familiya || '';
-				document.getElementById('fTelefon').value = w.telefon || '';
+				document.getElementById('fTelefon').value = w.telefon || '+998 ';
 				document.getElementById('fLavozim').value = w.lavozim || '';
 				document.getElementById('fBaylovNarx').value = w.baylovNarx || '4000';
 				document.getElementById('baylovNarxField').style.display = w.lavozim === 'Baylovchi' ? 'block' : 'none';
 				openModal('Ishchini tahrirlash');
 			}
 
-			function saveWorker() {
+			async function saveWorker() {
 				const ism = document.getElementById('fIsm').value.trim();
 				const familiya = document.getElementById('fFamiliya').value.trim();
 				const telefon = document.getElementById('fTelefon').value.trim();
@@ -1849,36 +1843,32 @@
 					return;
 				}
 
-				const workers = getWorkers();
-
-				if (editingId) {
-					const idx = workers.findIndex(w => w.id === editingId);
-					if (idx !== -1) {
-						workers[idx] = {
-							...workers[idx],
+				try {
+					if (editingId) {
+						await Ishchilar.update(editingId, {
 							ism,
 							familiya,
 							telefon,
 							lavozim,
-							baylovNarx: lavozim === 'Baylovchi' ? baylovNarx : null,
-						};
+							baylov_narx: lavozim === 'Baylovchi' ? baylovNarx : null,
+						});
+					} else {
+						await Ishchilar.add({
+							id: genId(),
+							ism,
+							familiya,
+							telefon,
+							lavozim,
+							baylov_narx: lavozim === 'Baylovchi' ? baylovNarx : null,
+						});
 					}
-				} else {
-					workers.push({
-						id: genId(),
-						ism,
-						familiya,
-						telefon,
-						lavozim,
-						baylovNarx: lavozim === 'Baylovchi' ? baylovNarx : null,
-						qoshilgan: new Date().toISOString(),
-					});
+					await loadWorkers();
+					closeModal();
+					updateCounts();
+					renderTable();
+				} catch (e) {
+					alert('Xato: ' + e.message);
 				}
-
-				saveWorkers(workers);
-				closeModal();
-				updateCounts();
-				renderTable();
 			}
 
 			// O'CHIRISH
@@ -1893,13 +1883,17 @@
 				deleteId = null;
 			}
 
-			function confirmDelete() {
+			async function confirmDelete() {
 				if (!deleteId) return;
-				const workers = getWorkers().filter(w => w.id !== deleteId);
-				saveWorkers(workers);
-				closeConfirm();
-				updateCounts();
-				renderTable();
+				try {
+					await Ishchilar.delete(deleteId);
+					await loadWorkers();
+					closeConfirm();
+					updateCounts();
+					renderTable();
+				} catch (e) {
+					alert('Xato: ' + e.message);
+				}
 			}
 
 			// QIDIRUV
@@ -1908,7 +1902,7 @@
 				renderTable();
 			});
 
-			// ESC tugmasi
+			// ESC
 			document.addEventListener('keydown', e => {
 				if (e.key === 'Escape') {
 					closeModal();
@@ -1916,40 +1910,28 @@
 				}
 			});
 
-			// ISHGA TUSHIRISH
-			updateCounts();
-			renderTable();
+			// TELEFON FORMAT
 			const input = document.getElementById('fTelefon');
-
-			// Dastlabki qiymatni o'rnatish
 			input.value = '+998 ';
-
 			input.addEventListener('input', e => {
 				let value = e.target.value;
-
-				// 1. "+998 " qismini o'chirib bo'lmasligi uchun tekshirish
-				if (!value.startsWith('+998 ')) {
-					value = '+998 ';
-				}
-
-				// 2. Faqat raqamlarni ajratib olish (+998 dan keyin)
+				if (!value.startsWith('+998 ')) value = '+998 ';
 				let numbers = value.replace(/\+998\s?/, '').replace(/\D/g, '');
-
-				// 3. Raqamlarni formatlash (XX XXX XX XX)
 				let formatted = '+998 ';
 				if (numbers.length > 0) formatted += numbers.substring(0, 2);
 				if (numbers.length > 2) formatted += ' ' + numbers.substring(2, 5);
 				if (numbers.length > 5) formatted += ' ' + numbers.substring(5, 7);
 				if (numbers.length > 7) formatted += ' ' + numbers.substring(7, 9);
-
 				e.target.value = formatted;
 			});
-
-			// Orqaga o'chirish tugmasi bosilganda "+998 " ni o'chirib yubormaslik uchun
 			input.addEventListener('keydown', e => {
-				if (e.key === 'Backspace' && e.target.value.length <= 5) {
-					e.preventDefault();
-				}
+				if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
+			});
+
+			// ISHGA TUSHIRISH
+			loadWorkers().then(() => {
+				updateCounts();
+				renderTable();
 			});
 		</script>
 	</body>

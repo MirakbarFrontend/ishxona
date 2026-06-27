@@ -1226,6 +1226,7 @@
 				}
 			}
 		</style>
+		<script src="../api.js"></script>
 	</head>
 	<body>
 		<!-- SIDEBAR -->
@@ -1282,13 +1283,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Hisobotlar</div>
-					<a class="nav-item" href="hisobot.html"
-						><svg viewBox="0 0 24 24">
-							<line x1="18" y1="20" x2="18" y2="10" />
-							<line x1="12" y1="20" x2="12" y2="4" />
-							<line x1="6" y1="20" x2="6" y2="14" /></svg
-						>Oylik hisobot</a
-					>
+
 					<a class="nav-item" href="maosh.html"
 						><svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="10" />
@@ -1524,12 +1519,10 @@
 		<div class="toast" id="toast"></div>
 
 		<script>
-			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			// AUTH
+			Auth.check();
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = '../index.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
 			function getData(key) {
@@ -1544,9 +1537,6 @@
 			}
 			function genId() {
 				return Date.now().toString(36) + Math.random().toString(36).slice(2);
-			}
-			function getWorkers() {
-				return getData('pinchuza_workers') || [];
 			}
 
 			const MONTHS = [
@@ -1566,6 +1556,8 @@
 			const now = new Date();
 			let activeYear = now.getFullYear();
 			let activeMonth = now.getMonth();
+			let kirimlarCache = [];
+			let workersCache = [];
 
 			function getMonthKey() {
 				return activeYear + '-' + String(activeMonth + 1).padStart(2, '0');
@@ -1575,75 +1567,88 @@
 			function renderMonthTabs() {
 				const tabs = document.getElementById('monthTabs');
 				tabs.innerHTML = MONTHS.map(
-					(name, i) => `
-    <div class="month-tab${i === activeMonth ? ' active' : ''}" onclick="selectMonth(${i})">${name}</div>
-  `,
+					(name, i) => `<div class="month-tab${i === activeMonth ? ' active' : ''}" onclick="selectMonth(${i})">${name}</div>`,
 				).join('');
 				document.getElementById('monthLabel').textContent = MONTHS[activeMonth] + ' ' + activeYear;
 				document.getElementById('topbarSub').textContent = MONTHS[activeMonth] + ' ' + activeYear + ' — kraxmal hisobi';
 			}
 
-			function selectMonth(i) {
+			async function selectMonth(i) {
 				activeMonth = i;
-				renderAll();
+				await renderAll();
 			}
 
-			// MA'LUMOTLAR
-			function getOmborData() {
-				return getData('pinchuza_ombor_' + getMonthKey()) || { kirimlar: [], hamirIste: {} };
-			}
-			function saveOmborData(d) {
-				setData('pinchuza_ombor_' + getMonthKey(), d);
+			// MA'LUMOTLAR YUKLASH
+			async function loadData() {
+				try {
+					const rows = await Ombor.getOylik(activeYear, activeMonth + 1);
+					kirimlarCache = rows.map(r => ({
+						id: r.id,
+						miqdor: r.miqdor,
+						sana: r.sana ? r.sana.split('T')[0] : r.sana,
+						izoh: r.izoh,
+					}));
+				} catch {
+					kirimlarCache = [];
+				}
+
+				try {
+					const rows = await Ishchilar.getAll();
+					workersCache = rows.map(r => ({
+						id: r.id,
+						ism: r.ism,
+						familiya: r.familiya,
+						lavozim: r.lavozim,
+						baylovNarx: r.baylov_narx,
+					}));
+				} catch {
+					workersCache = [];
+				}
 			}
 
-			// Ish hisobidan hamir qiluvchilarning oylik iste'molini avtomatik hisoblash (kg)
-			function getHamirFromIshHisobi() {
-				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
+			// ISH HISOBIDAN HAMIR AVTOMATIK HISOBLASH
+			async function getHamirFromIshHisobi() {
+				const workers = workersCache.filter(w => w.lavozim === 'Hamir qiluvchi');
 				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
 				let total = 0;
-				const perWorker = {};
-				workers.forEach(w => {
-					perWorker[w.id] = 0;
-				});
+
 				for (let day = 1; day <= daysInMonth; day++) {
 					const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-					const ishData = getData('pinchuza_ish_' + dayKey) || {};
-					workers.forEach(w => {
-						const rec = ishData[w.id];
-						if (rec && rec.miqdor) {
-							const val = parseFloat(rec.miqdor) || 0;
-							total += val;
-							perWorker[w.id] = (perWorker[w.id] || 0) + val;
-						}
-					});
+					try {
+						const ishData = await IshHisobi.getKunlik(dayKey);
+						workers.forEach(w => {
+							const rec = ishData[w.id];
+							if (rec && rec.miqdor) total += parseFloat(rec.miqdor) || 0;
+						});
+					} catch {}
 				}
-				return { total, perWorker };
+				return total;
 			}
 
 			// STATS
-			function renderStats() {
-				const d = getOmborData();
-				const kirimlar = d.kirimlar || [];
-				const totalKirimT = kirimlar.reduce((s, x) => s + (parseFloat(x.miqdor) || 0), 0);
-				const hamirHisob = getHamirFromIshHisobi();
-				const totalIshlatilganKg = hamirHisob.total;
-				const totalIshlatilganT = totalIshlatilganKg / 1000;
+			async function renderStats() {
+				const totalKirimT = kirimlarCache.reduce((s, x) => s + (parseFloat(x.miqdor) || 0), 0);
+				const totalIshlatilganKg = await getHamirFromIshHisobi();
 				const kirimKg = totalKirimT * 1000;
 				const qoldiqKg = Math.max(0, kirimKg - totalIshlatilganKg);
 				const qoldiqT = qoldiqKg / 1000;
 				const max = totalKirimT || 1;
+
 				document.getElementById('statKirim').innerHTML = totalKirimT.toFixed(1) + '<span class=stat-unit>t</span>';
 				document.getElementById('statIshlatilgan').innerHTML = totalIshlatilganKg.toFixed(1) + '<span class=stat-unit>kg</span>';
 				document.getElementById('statQoldiq').innerHTML = qoldiqT.toFixed(2) + '<span class=stat-unit>t</span>';
-				document.getElementById('statKirimSoni').innerHTML = kirimlar.length + '<span class=stat-unit>ta</span>';
+				document.getElementById('statKirimSoni').innerHTML = kirimlarCache.length + '<span class=stat-unit>ta</span>';
 				document.getElementById('prKirim').style.width = '100%';
-				document.getElementById('prIshlatilgan').style.width = Math.min(100, (totalIshlatilganT / max) * 100).toFixed(0) + '%';
+				document.getElementById('prIshlatilgan').style.width =
+					Math.min(100, (totalIshlatilganKg / 1000 / max) * 100).toFixed(0) + '%';
 				document.getElementById('prQoldiq').style.width = Math.min(100, (qoldiqT / max) * 100).toFixed(0) + '%';
 				document.getElementById('xlKirim').textContent = totalKirimT.toFixed(1) + ' t';
 				document.getElementById('xlIshlatilgan').textContent = totalIshlatilganKg.toFixed(1) + ' kg';
 				const xlQoldiq = document.getElementById('xlQoldiq');
 				xlQoldiq.textContent = qoldiqT.toFixed(2) + ' t (' + qoldiqKg.toFixed(0) + ' kg)';
 				xlQoldiq.style.color = qoldiqKg < 500 ? 'var(--coral)' : qoldiqKg < 2000 ? 'var(--amber)' : 'var(--green)';
+
+				// Dashboard uchun
 				setData('pinchuza_ombor_stats_' + getMonthKey(), {
 					kirim: totalKirimT,
 					ishlatilganKg: totalIshlatilganKg,
@@ -1654,8 +1659,7 @@
 
 			// KIRIM JADVALI
 			function renderKirimList() {
-				const d = getOmborData();
-				const kirimlar = (d.kirimlar || []).slice().reverse();
+				const kirimlar = [...kirimlarCache].reverse();
 				const el = document.getElementById('kirimList');
 
 				if (kirimlar.length === 0) {
@@ -1677,13 +1681,16 @@
 					.join('');
 			}
 
-			function deleteKirim(id) {
+			async function deleteKirim(id) {
 				if (!confirm("Bu kirimni o'chirasizmi?")) return;
-				const d = getOmborData();
-				d.kirimlar = (d.kirimlar || []).filter(k => k.id !== id);
-				saveOmborData(d);
-				renderAll();
-				showToast("O'chirildi");
+				try {
+					await Ombor.delete(id);
+					await loadData();
+					await renderAll();
+					showToast("O'chirildi");
+				} catch (e) {
+					showToast('Xato: ' + e.message);
+				}
 			}
 
 			// KIRIM MODAL
@@ -1699,7 +1706,8 @@
 				document.getElementById('kMiqdor').value = '';
 				document.getElementById('kIzoh').value = '';
 			}
-			function saveKirim() {
+
+			async function saveKirim() {
 				const miqdor = parseFloat(document.getElementById('kMiqdor').value);
 				const sana = document.getElementById('kSana').value;
 				const izoh = document.getElementById('kIzoh').value.trim();
@@ -1711,20 +1719,21 @@
 					alert('Sana kiritilishi shart!');
 					return;
 				}
-				const d = getOmborData();
-				if (!d.kirimlar) d.kirimlar = [];
-				d.kirimlar.push({ id: genId(), miqdor, sana, izoh, qoshilgan: new Date().toISOString() });
-				saveOmborData(d);
-				closeKirimModal();
-				renderAll();
-				showToast('Kirim saqlandi! +' + miqdor + ' t');
+
+				try {
+					await Ombor.add({ id: genId(), miqdor, sana, izoh });
+					closeKirimModal();
+					await loadData();
+					await renderAll();
+					showToast('Kirim saqlandi! +' + miqdor + ' t');
+				} catch (e) {
+					showToast('Xato: ' + e.message);
+				}
 			}
 
-			// HAMIR ISHLATISH
+			// HAMIR GRID
 			function renderHamirGrid() {
-				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
-				const d = getOmborData();
-				const hamirIste = d.hamirIste || {};
+				const workers = workersCache.filter(w => w.lavozim === 'Hamir qiluvchi');
 				const grid = document.getElementById('hamirGrid');
 
 				if (workers.length === 0) {
@@ -1734,35 +1743,18 @@
 
 				grid.innerHTML = workers
 					.map(w => {
-						const val = hamirIste[w.id] || '';
 						const initials = ((w.ism || '?')[0] + (w.familiya ? w.familiya[0] : '')).toUpperCase();
 						return `<div class="hamir-card">
       <div class="hamir-card-name">${initials} ${w.ism || ''} ${w.familiya || ''}</div>
       <div class="hamir-input-row">
         <input class="hamir-input" type="number" min="0" step="0.1"
-          id="hamir-${w.id}" value="${val}" placeholder="0"/>
+          id="hamir-${w.id}" value="" placeholder="0"/>
         <span class="hamir-unit">kg</span>
       </div>
     </div>`;
 					})
 					.join('');
 			}
-
-			document.getElementById('saveHamirBtn').addEventListener('click', () => {
-				const workers = getWorkers().filter(w => w.lavozim === 'Hamir qiluvchi');
-				const d = getOmborData();
-				if (!d.hamirIste) d.hamirIste = {};
-				workers.forEach(w => {
-					const inp = document.getElementById('hamir-' + w.id);
-					if (inp) {
-						const val = parseFloat(inp.value);
-						d.hamirIste[w.id] = isNaN(val) ? 0 : val;
-					}
-				});
-				saveOmborData(d);
-				renderAll();
-				showToast("Iste'mol saqlandi!");
-			});
 
 			// TOAST
 			function showToast(msg) {
@@ -1776,16 +1768,17 @@
 				if (e.key === 'Escape') closeKirimModal();
 			});
 
-			function renderAll() {
+			async function renderAll() {
 				renderMonthTabs();
-				renderStats();
+				await renderStats();
 				renderKirimList();
 				renderHamirGrid();
 			}
 
-			// Sana default
 			document.getElementById('kSana').value = now.toISOString().split('T')[0];
-			renderAll();
+
+			// ISHGA TUSHIRISH
+			loadData().then(() => renderAll());
 		</script>
 	</body>
 </html>

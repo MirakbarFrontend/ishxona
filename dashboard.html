@@ -758,7 +758,7 @@
 				animation: fadeUp 0.4s ease 0.2s both;
 			}
 			/* =========================================================
-   RESPONSIVE STYLES — Mobil va Tablet uchun
+   RESPONSIVE STYLES — Mobil va Tablet uchun (Dashboard)
    Asosiy CSS faylingizning OXIRIGA shu qismni qo'shing.
    HTML strukturasi o'zgarmaydi, faqat CSS qo'shiladi.
    ========================================================= */
@@ -801,49 +801,44 @@
 
 			/* -----------------------------------------------------------
    2) KICHIK TABLET / KATTA TELEFON (≤860px)
-   Sidebar endi fixed-vertical bo'lishni to'xtatadi,
-   tepaga gorizontal panel bo'lib chiqadi.
+   Sidebar pastga bottom-nav bo'lib tushadi
+   (boshqa sahifalar bilan bir xil, izchil ko'rinish)
    ----------------------------------------------------------- */
 			@media (max-width: 860px) {
 				body {
 					flex-direction: column;
 				}
 
-				/* SIDEBAR -> TEPADAGI GORIZONTAL PANEL */
+				/* SIDEBAR -> PASTKI BOTTOM-NAV */
 				.sidebar {
-					position: sticky;
-					top: 0;
+					position: fixed;
+					top: auto;
 					left: 0;
-					bottom: auto;
+					right: 0;
+					bottom: 0;
 					width: 100%;
 					min-height: auto;
-					height: auto;
+					height: 64px;
 					flex-direction: row;
-					align-items: center;
+					align-items: stretch;
 					border-right: none;
-					border-bottom: 1px solid var(--border);
+					border-top: 1px solid var(--border);
 					z-index: 200;
-					overflow: hidden;
+					background: rgba(18, 21, 29, 0.97);
+					backdrop-filter: blur(12px);
 				}
 
+				/* Logo bottom-nav'da kerak emas, tepada topbar bor */
 				.sidebar-brand {
-					padding: 10px 14px;
-					border-bottom: none;
-					border-right: 1px solid var(--border);
-					flex-shrink: 0;
+					display: none;
 				}
 
-				.brand-text span {
-					display: none; /* "Tashkilot nomi" kabi subtitle joy tejash uchun yashiriladi */
-				}
-
-				/* NAV: gorizontal scroll qiladigan qator */
 				.sidebar-nav {
 					display: flex;
 					flex-direction: row;
-					align-items: center;
-					gap: 4px;
-					padding: 8px 10px;
+					align-items: stretch;
+					gap: 2px;
+					padding: 6px 6px;
 					overflow-x: auto;
 					overflow-y: visible;
 					flex: 1;
@@ -856,68 +851,88 @@
 
 				.nav-section {
 					display: flex;
-					align-items: center;
-					gap: 4px;
+					align-items: stretch;
+					gap: 2px;
 					margin-bottom: 0;
 					flex-shrink: 0;
+					width: 100%;
 				}
 
 				.nav-label {
-					display: none; /* "Asosiy", "Boshqaruv" kabi sarlavhalar tor joyda keraksiz */
+					display: none;
 				}
 
 				.nav-item {
+					flex: 1;
+					min-width: 60px;
 					flex-direction: column;
+					justify-content: center;
 					gap: 3px;
-					padding: 6px 10px;
+					padding: 6px 4px;
 					white-space: nowrap;
-					font-size: 10.5px;
+					font-size: 9.5px;
 					text-align: center;
 					margin-bottom: 0;
+					position: relative;
+					border-radius: 10px;
 				}
 				.nav-item svg {
-					width: 17px;
-					height: 17px;
+					width: 19px;
+					height: 19px;
 				}
 				.nav-badge {
 					margin-left: 0;
 					position: absolute;
 					top: 2px;
-					right: 4px;
+					right: 6px;
 					font-size: 9px;
 					padding: 0 5px;
 				}
 
-				/* FOOTER (user card) -> panelning o'ng chetiga */
+				/* User card / logout -> bottom-nav'ning eng o'ng chetidagi tugmasi */
 				.sidebar-footer {
 					border-top: none;
 					border-left: 1px solid var(--border);
-					padding: 8px 10px;
+					padding: 6px;
 					flex-shrink: 0;
 					display: flex;
 					align-items: center;
+					gap: 2px;
 				}
 				.user-card {
-					padding: 6px 8px;
+					padding: 6px;
+					flex-direction: column;
+					gap: 2px;
+					background: transparent;
+					border-radius: 10px;
+				}
+				.user-avatar {
+					width: 26px;
+					height: 26px;
+					font-size: 11px;
 				}
 				.user-info {
-					display: none; /* ism/lavozim matni yashiriladi, faqat avatar qoladi */
+					display: none;
 				}
 				.user-card svg {
 					display: none;
 				}
 				.logout-btn {
 					margin-top: 0;
-					margin-left: 6px;
 					padding: 6px;
+					flex-direction: column;
+					gap: 2px;
+					border-radius: 10px;
 				}
 				.logout-btn span {
 					display: none;
 				}
 
-				/* MAIN: chap margin olib tashlanadi, chunki sidebar endi tepada */
+				/* MAIN: chap margin olib tashlanadi, pastdan joy qoldiriladi
+	   (bottom-nav kontentni bosib qolmasligi uchun) */
 				.main {
 					margin-left: 0;
+					padding-bottom: 64px;
 				}
 
 				.topbar {
@@ -1067,14 +1082,14 @@
 					justify-content: flex-end;
 				}
 				.nav-item {
-					padding: 6px 8px;
-					font-size: 10px;
+					font-size: 9px;
 				}
 				.stat-value {
 					font-size: 20px;
 				}
 			}
 		</style>
+		<script src="api.js"></script>
 	</head>
 	<body>
 		<!-- SIDEBAR -->
@@ -1143,14 +1158,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Hisobotlar</div>
-					<a class="nav-item" href="#">
-						<svg viewBox="0 0 24 24">
-							<line x1="18" y1="20" x2="18" y2="10" />
-							<line x1="12" y1="20" x2="12" y2="4" />
-							<line x1="6" y1="20" x2="6" y2="14" />
-						</svg>
-						Oylik hisobot
-					</a>
+
 					<a class="nav-item" href="pages/maosh.html">
 						<svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="10" />
@@ -1161,7 +1169,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Tizim</div>
-					<a class="nav-item" href="#">
+					<a class="nav-item" href="pages/sozlanmalar.html">
 						<svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="3" />
 							<path
@@ -1365,24 +1373,17 @@
 		</main>
 
 		<script>
-			// ─── AUTH TEKSHIRISH ───
-			const auth = localStorage.getItem('pinchuza_auth');
-			if (!auth) {
-				window.location.href = 'login.html';
-			} else {
-				const user = JSON.parse(auth);
-				document.getElementById('adminName').textContent = user.name || 'Admin';
-			}
+			// AUTH
+			Auth.check();
+			const auth = JSON.parse(localStorage.getItem('pinchuza_auth'));
+			document.getElementById('adminName').textContent = auth?.name || 'Admin';
 
-			// ─── CHIQISH ───
+			// CHIQISH
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = 'login.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
-			// ─── SANA TIZIMI ───
+			// SANA TIZIMI
 			const MONTHS = [
 				'Yanvar',
 				'Fevral',
@@ -1407,12 +1408,25 @@
 			function formatDate(y, m, d) {
 				return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
 			}
-
 			function getDaysInMonth(y, m) {
 				return new Date(y, m + 1, 0).getDate();
 			}
+			function getMonthKey(y, m) {
+				return y + '-' + String(m + 1).padStart(2, '0');
+			}
+			function getDayKey(y, m, d) {
+				return formatDate(y, m, d);
+			}
 
-			// ─── OY TABLARI ───
+			function getData(key) {
+				try {
+					return JSON.parse(localStorage.getItem(key) || 'null');
+				} catch {
+					return null;
+				}
+			}
+
+			// OY TABLARI
 			function renderMonthTabs() {
 				const tabs = document.getElementById('monthTabs');
 				tabs.innerHTML = '';
@@ -1422,8 +1436,6 @@
 					t.textContent = name;
 					t.addEventListener('click', () => {
 						activeMonth = i;
-						// Oy o'zgarganda kuni shu oyning birinchi kuniga o'tkazish (yoki bugungi kun)
-						const days = getDaysInMonth(activeYear, activeMonth);
 						if (activeYear === now.getFullYear() && activeMonth === now.getMonth()) {
 							activeDay = now.getDate();
 						} else {
@@ -1435,13 +1447,11 @@
 				});
 			}
 
-			// ─── KUN NAVIGATSIYASI ───
+			// KUN NAVIGATSIYASI
 			function renderDayNav() {
 				const d = new Date(activeYear, activeMonth, activeDay);
-				const dayName = DAYS_UZ[d.getDay()];
 				document.getElementById('dayTitle').textContent = activeDay + ' ' + MONTHS[activeMonth] + ', ' + activeYear;
-				document.getElementById('daySubtitle').textContent = dayName;
-
+				document.getElementById('daySubtitle').textContent = DAYS_UZ[d.getDay()];
 				const isToday = activeYear === now.getFullYear() && activeMonth === now.getMonth() && activeDay === now.getDate();
 				document.getElementById('dayTitle').style.color = isToday ? 'var(--green)' : 'var(--text)';
 			}
@@ -1480,70 +1490,18 @@
 				renderAll();
 			});
 
-			// ─── TOPBAR SANA ───
+			// TOPBAR
 			function renderTopbar() {
 				const d = new Date(activeYear, activeMonth, activeDay);
-				const dayName = DAYS_UZ[d.getDay()];
 				document.getElementById('currentDateBadge').textContent = activeDay + ' ' + MONTHS[activeMonth] + ' ' + activeYear;
 				document.getElementById('topbarSub').textContent =
-					dayName + ', ' + activeDay + ' ' + MONTHS[activeMonth] + " — jonli ko'rsatkichlar";
+					DAYS_UZ[d.getDay()] + ', ' + activeDay + ' ' + MONTHS[activeMonth] + " — jonli ko'rsatkichlar";
 				document.getElementById('todayDateLabel').textContent = activeDay + ' ' + MONTHS[activeMonth];
 				document.getElementById('monthSaleLabel').textContent = MONTHS[activeMonth] + ' ' + activeYear;
 				document.getElementById('stockMonthLabel').textContent = MONTHS[activeMonth] + ' ' + activeYear;
 			}
 
-			// ─── localStorage MA'LUMOTLARI ───
-			function getData(key) {
-				try {
-					return JSON.parse(localStorage.getItem(key) || 'null');
-				} catch {
-					return null;
-				}
-			}
-
-			function getMonthKey(y, m) {
-				return y + '-' + String(m + 1).padStart(2, '0');
-			}
-			function getDayKey(y, m, d) {
-				return formatDate(y, m, d);
-			}
-
-			// ─── STATS ───
-			function renderStats() {
-				const workers = getData('pinchuza_workers') || [];
-				document.getElementById('statWorkers').textContent = workers.length;
-				document.getElementById('workerCount').textContent = workers.length;
-				document.getElementById('statWorkersSub').innerHTML =
-					workers.length > 0 ? '<b>' + workers.length + "</b> ta ishchi ro'yxatda" : "Hali ishchi qo'shilmagan";
-
-				// Ombor
-				const omborKey = 'pinchuza_ombor_' + getMonthKey(activeYear, activeMonth);
-				const omborStats = getData('pinchuza_ombor_stats_' + getMonthKey(activeYear, activeMonth));
-				const qoldiq = omborStats ? omborStats.qoldiqT || omborStats.qoldiq || 0 : 0;
-				const kirimT = omborStats ? omborStats.kirim || 0 : 0;
-				document.getElementById('statOmbor').innerHTML = qoldiq.toFixed(2) + '<span class="stat-unit">t</span>';
-				document.getElementById('statOmborSub').innerHTML = 'Kirim: <b>' + kirimT + ' t</b>';
-				// Savdo
-				const savdoKey = 'pinchuza_savdo_' + getMonthKey(activeYear, activeMonth);
-				const savdoList = getData(savdoKey) || [];
-				const totalQop = savdoList.reduce((s, x) => s + (x.qop || 0), 0);
-				const mijozlar = new Set(savdoList.map(x => x.mijoz)).size;
-				document.getElementById('statSavdo').innerHTML = totalQop + '<span class="stat-unit">qop</span>';
-				document.getElementById('statSavdoSub').innerHTML = '<b>' + mijozlar + '</b> ta mijozga berildi';
-
-				// Maosh
-				const maoshKey = 'pinchuza_maosh_' + getMonthKey(activeYear, activeMonth);
-				const maoshData = getData(maoshKey) || { jami: 0 };
-				const jami = maoshData.jami || 0;
-				const jamiText =
-					jami >= 1000000
-						? (jami / 1000000).toFixed(1) + '<span class="stat-unit">mln</span>'
-						: jami.toLocaleString() + '<span class="stat-unit">so\'m</span>';
-				document.getElementById('statMaosh').innerHTML = jamiText;
-				document.getElementById('statMaoshSub').innerHTML = workers.length + " ishchiga to'lanadi";
-			}
-
-			// ─── ISHCHILAR RO'YXATI ───
+			// COLORS
 			const COLORS = [
 				{ bg: 'var(--accent-g)', c: 'var(--accent)' },
 				{ bg: 'var(--green-g)', c: 'var(--green)' },
@@ -1552,131 +1510,179 @@
 				{ bg: 'var(--coral-g)', c: 'var(--coral)' },
 			];
 
-			function renderWorkers() {
-				const workers = getData('pinchuza_workers') || [];
-				const dayKey = getDayKey(activeYear, activeMonth, activeDay);
-				const ishHisobi = getData('pinchuza_ish_' + dayKey) || {};
-				const el = document.getElementById('workersList');
-
-				if (workers.length === 0) {
-					el.innerHTML =
-						'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div>Hali ishchilar qo\'shilmagan</div></div>';
-					return;
+			// STATS
+			async function renderStats() {
+				try {
+					const workers = await Ishchilar.getAll();
+					document.getElementById('statWorkers').textContent = workers.length;
+					document.getElementById('workerCount').textContent = workers.length;
+					document.getElementById('statWorkersSub').innerHTML =
+						workers.length > 0 ? '<b>' + workers.length + "</b> ta ishchi ro'yxatda" : "Hali ishchi qo'shilmagan";
+					document.getElementById('statMaoshSub').innerHTML = workers.length + " ishchiga to'lanadi";
+				} catch {
+					document.getElementById('statWorkers').textContent = '—';
 				}
 
-				el.innerHTML = workers
-					.slice(0, 6)
-					.map((w, i) => {
-						if (!w || typeof w !== 'object') return '';
-						const clr = COLORS[i % COLORS.length];
-						const ism = w.ism || '';
-						const familiya = w.familiya || '';
-						const initials = (ism[0] || '?') + (familiya[0] || '');
-						let ish = ishHisobi[w.id] || {};
-						if (w.lavozim === 'Baylovchi') {
-							const ish4000 = ishHisobi[w.id + '_4000'] || {};
-							const ish5000 = ishHisobi[w.id + '_5000'] || {};
-							const jami = (parseFloat(ish4000.miqdor) || 0) + (parseFloat(ish5000.miqdor) || 0);
-							ish = { miqdor: jami || '', birlik: 'qop' };
-						}
-						const miqdor = ish.miqdor ? ish.miqdor + ' ' + (ish.birlik || 'kg') : '—';
-						const miqdorParts = miqdor.split(' ');
-						return `
-      <div class="worker-row">
+				// Ombor
+				const omborStats = getData('pinchuza_ombor_stats_' + getMonthKey(activeYear, activeMonth));
+				const qoldiq = omborStats ? omborStats.qoldiqT || omborStats.qoldiq || 0 : 0;
+				const kirimT = omborStats ? omborStats.kirim || 0 : 0;
+				document.getElementById('statOmbor').innerHTML = qoldiq.toFixed(2) + '<span class="stat-unit">t</span>';
+				document.getElementById('statOmborSub').innerHTML = 'Kirim: <b>' + kirimT + ' t</b>';
+
+				// Savdo
+				try {
+					const savdoList = await Savdo.getOylik(activeYear, activeMonth + 1);
+					const totalQop = savdoList.reduce((s, x) => s + (parseInt(x.qop) || 0), 0);
+					const mijozlar = new Set(savdoList.map(x => x.mijoz)).size;
+					document.getElementById('statSavdo').innerHTML = totalQop + '<span class="stat-unit">qop</span>';
+					document.getElementById('statSavdoSub').innerHTML = '<b>' + mijozlar + '</b> ta mijozga berildi';
+				} catch {
+					document.getElementById('statSavdo').innerHTML = '0<span class="stat-unit">qop</span>';
+					document.getElementById('statSavdoSub').innerHTML = '—';
+				}
+
+				// Maosh
+				const maoshData = getData('pinchuza_maosh_' + getMonthKey(activeYear, activeMonth)) || { jami: 0 };
+				const jami = maoshData.jami || 0;
+				document.getElementById('statMaosh').innerHTML =
+					jami >= 1000000
+						? (jami / 1000000).toFixed(1) + '<span class="stat-unit">mln</span>'
+						: jami.toLocaleString() + "<span class='stat-unit'>so'm</span>";
+			}
+
+			// ISHCHILAR
+			async function renderWorkers() {
+				const el = document.getElementById('workersList');
+				try {
+					const workers = await Ishchilar.getAll();
+					const dayKey = getDayKey(activeYear, activeMonth, activeDay);
+
+					// Ish hisobini backenddan olish
+					let ishHisobi = {};
+					try {
+						ishHisobi = await IshHisobi.getKunlik(dayKey);
+					} catch {}
+
+					if (workers.length === 0) {
+						el.innerHTML =
+							'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div>Hali ishchilar qo\'shilmagan</div></div>';
+						return;
+					}
+
+					el.innerHTML = workers
+						.slice(0, 6)
+						.map((w, i) => {
+							if (!w || typeof w !== 'object') return '';
+							const clr = COLORS[i % COLORS.length];
+							const ism = w.ism || '';
+							const familiya = w.familiya || '';
+							const initials = (ism[0] || '?') + (familiya[0] || '');
+							const lavozim = w.lavozim || w.lavozim;
+							const baylovNarx = w.baylov_narx || w.baylovNarx;
+
+							let ish = ishHisobi[w.id] || {};
+							if (lavozim === 'Baylovchi') {
+								const ish4000 = ishHisobi[w.id + '_4000'] || {};
+								const ish5000 = ishHisobi[w.id + '_5000'] || {};
+								const jamiQ = (parseFloat(ish4000.miqdor) || 0) + (parseFloat(ish5000.miqdor) || 0);
+								ish = { miqdor: jamiQ || '', birlik: 'qop' };
+							}
+							const miqdor = ish.miqdor ? ish.miqdor + ' ' + (ish.birlik || 'kg') : '—';
+							const parts = miqdor.split(' ');
+							return `<div class="worker-row">
         <div class="worker-ava" style="background:${clr.bg};color:${clr.c}">${initials.toUpperCase()}</div>
         <div class="worker-info">
           <div class="worker-name">${ism} ${familiya}</div>
-          <div class="worker-type">${w.lavozim || '—'}</div>
+          <div class="worker-type">${lavozim || '—'}</div>
         </div>
-        <div class="worker-kg">${miqdorParts[0]} <span>${miqdorParts[1] || ''}</span></div>
+        <div class="worker-kg">${parts[0]} <span>${parts[1] || ''}</span></div>
       </div>`;
-					})
-					.join('');
+						})
+						.join('');
+				} catch (e) {
+					el.innerHTML =
+						'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div>Yuklanmadi</div></div>';
+				}
 			}
 
-			// ─── SAVDO RO'YXATI ───
-			function renderSales() {
-				const savdoKey = 'pinchuza_savdo_' + getMonthKey(activeYear, activeMonth);
-				const savdoList = (getData(savdoKey) || []).slice(-5).reverse();
+			// SAVDO
+			async function renderSales() {
 				const el = document.getElementById('salesList');
 				const dotColors = ['var(--accent)', 'var(--green)', 'var(--amber)', 'var(--purple)', 'var(--coral)'];
-
-				if (savdoList.length === 0) {
-					el.innerHTML =
-						'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><div>Hali savdolar qo\'shilmagan</div></div>';
-					return;
-				}
-
-				el.innerHTML = savdoList
-					.map((s, i) => {
-						const c = dotColors[i % dotColors.length];
-						const sana = s.sana ? new Date(s.sana) : null;
-						const today = new Date();
-						let sanaText = s.sana || '—';
-						if (sana) {
-							if (sana.toDateString() === today.toDateString()) sanaText = 'Bugun';
-							else {
-								const yest = new Date();
-								yest.setDate(yest.getDate() - 1);
-								if (sana.toDateString() === yest.toDateString()) sanaText = 'Kecha';
-								else sanaText = sana.getDate() + ' ' + MONTHS[sana.getMonth()];
+				try {
+					const savdoList = (await Savdo.getOylik(activeYear, activeMonth + 1)).slice(-5).reverse();
+					if (savdoList.length === 0) {
+						el.innerHTML =
+							'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><div>Hali savdolar qo\'shilmagan</div></div>';
+						return;
+					}
+					el.innerHTML = savdoList
+						.map((s, i) => {
+							const c = dotColors[i % dotColors.length];
+							const sana = s.sana ? new Date(s.sana + 'T00:00:00') : null;
+							const today = new Date();
+							let sanaText = '—';
+							if (sana) {
+								if (sana.toDateString() === today.toDateString()) sanaText = 'Bugun';
+								else {
+									const yest = new Date();
+									yest.setDate(yest.getDate() - 1);
+									sanaText =
+										sana.toDateString() === yest.toDateString() ? 'Kecha' : sana.getDate() + ' ' + MONTHS[sana.getMonth()];
+								}
 							}
-						}
-						return `
-      <div class="sale-row">
+							return `<div class="sale-row">
         <div class="sale-dot" style="background:${c}"></div>
         <div class="sale-client">${s.mijoz || '—'}</div>
         <div class="sale-date">${sanaText}</div>
         <div class="sale-qop" style="color:${c}">${s.qop || 0} qop</div>
       </div>`;
-					})
-					.join('');
+						})
+						.join('');
+				} catch {
+					el.innerHTML =
+						'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg><div>Yuklanmadi</div></div>';
+				}
 			}
 
-			// ─── OMBOR HOLATI ───
+			// OMBOR
 			function renderStock() {
-				const omborKey = 'pinchuza_ombor_' + getMonthKey(activeYear, activeMonth);
-				const ombor = getData(omborKey) || { kirim: 0, ishlatilgan: 0 };
-				const kirim = ombor.kirim || 0;
-				const ishlatilgan = ombor.ishlatilgan || 0;
-				const qoldiq = Math.max(0, kirim - ishlatilgan);
-				const savdoKey = 'pinchuza_savdo_' + getMonthKey(activeYear, activeMonth);
-				const savdoList = getData(savdoKey) || [];
-				const totalQop = savdoList.reduce((s, x) => s + (x.qop || 0), 0);
+				const omborStats = getData('pinchuza_ombor_stats_' + getMonthKey(activeYear, activeMonth));
+				const kirimT = omborStats ? omborStats.kirim || 0 : 0;
+				const ishlatilganKg = omborStats ? omborStats.ishlatilganKg || 0 : 0;
+				const qoldiqT = omborStats ? omborStats.qoldiqT || omborStats.qoldiq || 0 : 0;
+				const savdoData = getData('pinchuza_savdo_stats_' + getMonthKey(activeYear, activeMonth)) || {};
+				const totalQop = savdoData.totalQop || 0;
+				const max = kirimT || 1;
 				const el = document.getElementById('stockPanel');
-				const max = kirim || 1;
 
 				el.innerHTML = `
     <div class="stock-row">
       <div class="stock-label">Kraxmal qoldig'i</div>
-      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${Math.min(100, (qoldiq / max) * 100).toFixed(0)}%;background:var(--accent)"></div></div>
-      <div class="stock-val" style="color:var(--accent)">${qoldiq.toFixed(1)} t</div>
+      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${Math.min(100, (qoldiqT / max) * 100).toFixed(0)}%;background:var(--accent)"></div></div>
+      <div class="stock-val" style="color:var(--accent)">${qoldiqT.toFixed(2)} t</div>
     </div>
     <div class="stock-row">
       <div class="stock-label">Oy kirimi</div>
       <div class="stock-bar-wrap"><div class="stock-bar" style="width:100%;background:var(--green)"></div></div>
-      <div class="stock-val" style="color:var(--green)">${kirim} t</div>
+      <div class="stock-val" style="color:var(--green)">${kirimT} t</div>
     </div>
     <div class="stock-row">
       <div class="stock-label">Ishlatilgan</div>
-      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${kirim > 0 ? Math.min(100, (ishlatilgan / kirim) * 100).toFixed(0) : 0}%;background:var(--amber)"></div></div>
-      <div class="stock-val" style="color:var(--amber)">${ishlatilgan} t</div>
-    </div>
-    <div class="stock-row">
-      <div class="stock-label">Savdoga chiqgan</div>
-      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${totalQop > 0 ? Math.min(100, totalQop / 5) : 0}%;background:var(--coral)"></div></div>
-      <div class="stock-val" style="color:var(--coral)">${totalQop} qop</div>
+      <div class="stock-bar-wrap"><div class="stock-bar" style="width:${kirimT > 0 ? Math.min(100, (ishlatilganKg / 1000 / max) * 100).toFixed(0) : 0}%;background:var(--amber)"></div></div>
+      <div class="stock-val" style="color:var(--amber)">${ishlatilganKg} kg</div>
     </div>`;
 			}
 
-			// ─── HAMMASI RENDER ───
-			function renderAll() {
+			// HAMMASI RENDER
+			async function renderAll() {
 				renderMonthTabs();
 				renderDayNav();
 				renderTopbar();
-				renderStats();
-				renderWorkers();
-				renderSales();
+				await renderStats();
+				await renderWorkers();
+				await renderSales();
 				renderStock();
 			}
 

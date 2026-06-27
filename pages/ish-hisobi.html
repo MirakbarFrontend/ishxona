@@ -1023,6 +1023,7 @@
 				}
 			}
 		</style>
+		<script src="../api.js"></script>
 	</head>
 	<body>
 		<!-- SIDEBAR -->
@@ -1085,13 +1086,7 @@
 				</div>
 				<div class="nav-section">
 					<div class="nav-label">Hisobotlar</div>
-					<a class="nav-item" href="#"
-						><svg viewBox="0 0 24 24">
-							<line x1="18" y1="20" x2="18" y2="10" />
-							<line x1="12" y1="20" x2="12" y2="4" />
-							<line x1="6" y1="20" x2="6" y2="14" /></svg
-						>Oylik hisobot</a
-					>
+
 					<a class="nav-item" href="../pages/maosh.html"
 						><svg viewBox="0 0 24 24">
 							<circle cx="12" cy="12" r="10" />
@@ -1189,12 +1184,9 @@
 
 		<script>
 			// AUTH
-			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			Auth.check();
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = '../index.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
 			// HELPERS
@@ -1204,12 +1196,6 @@
 				} catch {
 					return null;
 				}
-			}
-			function setData(key, val) {
-				localStorage.setItem(key, JSON.stringify(val));
-			}
-			function getWorkers() {
-				return getData('pinchuza_workers') || [];
 			}
 
 			const MONTHS = [
@@ -1246,17 +1232,6 @@
 				{ bg: 'var(--teal-g)', c: 'var(--teal)' },
 			];
 
-			// NARX (kg yoki qop uchun) — keyinroq sozlamalardan olinadi
-			const NARXLAR = {
-				Baylovchi_4000: 4000,
-				Baylovchi_5000: 5000,
-				Chiqaruvchi: 0,
-				Yuvuvchi: 0,
-				Qurutuvchi: 0,
-				'Hamir qiluvchi': 0,
-				Qirquvchi: 0,
-			};
-
 			// STATE
 			const now = new Date();
 			let activeYear = now.getFullYear();
@@ -1264,13 +1239,42 @@
 			let activeDay = now.getDate();
 			let activeLavozim = LAVOZIMLAR[0].key;
 			let activeBaylovNarx = '4000';
+			let workersCache = [];
+			let ishDataCache = {};
 
 			function getDayKey() {
 				return activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(activeDay).padStart(2, '0');
 			}
 
+			// WORKERS VA ISH DATA YUKLASH
+			async function loadData() {
+				try {
+					workersCache = await Ishchilar.getAll();
+					// DB dan kelgan ustun nomini frontend formatiga o'girish
+					workersCache = workersCache.map(r => ({
+						id: r.id,
+						ism: r.ism,
+						familiya: r.familiya,
+						telefon: r.telefon,
+						lavozim: r.lavozim,
+						baylovNarx: r.baylov_narx,
+					}));
+				} catch {
+					workersCache = [];
+				}
+
+				try {
+					ishDataCache = await IshHisobi.getKunlik(getDayKey());
+				} catch {
+					ishDataCache = {};
+				}
+			}
+
+			function getWorkers() {
+				return workersCache;
+			}
 			function getIshData() {
-				return getData('pinchuza_ish_' + getDayKey()) || {};
+				return ishDataCache;
 			}
 
 			// KUN RENDER
@@ -1284,15 +1288,12 @@
 				document.getElementById('daySubtitle').textContent = DAYS_UZ[d.getDay()];
 				document.getElementById('topbarSub').textContent =
 					activeDay + ' ' + MONTHS[activeMonth] + ' ' + activeYear + " — ish ma'lumotlari";
-
-				// Saved badge
-				const ishData = getIshData();
-				const hasSaved = Object.keys(ishData).length > 0;
+				const hasSaved = Object.keys(ishDataCache).length > 0;
 				document.getElementById('savedBadge').style.display = hasSaved ? 'flex' : 'none';
 			}
 
 			// KUN NAVIGATSIYA
-			document.getElementById('prevDay').addEventListener('click', () => {
+			document.getElementById('prevDay').addEventListener('click', async () => {
 				activeDay--;
 				if (activeDay < 1) {
 					activeMonth--;
@@ -1302,9 +1303,10 @@
 					}
 					activeDay = new Date(activeYear, activeMonth + 1, 0).getDate();
 				}
-				renderAll();
+				await renderAll();
 			});
-			document.getElementById('nextDay').addEventListener('click', () => {
+
+			document.getElementById('nextDay').addEventListener('click', async () => {
 				const maxDay = new Date(activeYear, activeMonth + 1, 0).getDate();
 				activeDay++;
 				if (activeDay > maxDay) {
@@ -1315,13 +1317,14 @@
 						activeYear++;
 					}
 				}
-				renderAll();
+				await renderAll();
 			});
-			document.getElementById('todayBtn').addEventListener('click', () => {
+
+			document.getElementById('todayBtn').addEventListener('click', async () => {
 				activeYear = now.getFullYear();
 				activeMonth = now.getMonth();
 				activeDay = now.getDate();
-				renderAll();
+				await renderAll();
 			});
 
 			// LAVOZIM TABLAR
@@ -1338,7 +1341,7 @@
 				}).join('');
 			}
 
-			function selectLavozim(key) {
+			async function selectLavozim(key) {
 				activeLavozim = key;
 				activeBaylovNarx = '4000';
 				document.getElementById('baylovNarxTabs').style.display = key === 'Baylovchi' ? 'flex' : 'none';
@@ -1375,7 +1378,7 @@
 					return;
 				}
 
-				const birlik = activeLavozim === 'Baylovchi' ? 'qop' : '';
+				const birlik = activeLavozim === 'Baylovchi' ? 'qop' : 'kg';
 
 				grid.innerHTML = filtered
 					.map((w, i) => {
@@ -1385,7 +1388,7 @@
 						const savedVal = ishData[key] ? ishData[key].miqdor : '';
 						const hasFilled = savedVal !== '' && savedVal !== undefined;
 
-						// Kecha qanchata qilgan
+						// Kecha
 						const prevDay = new Date(activeYear, activeMonth, activeDay - 1);
 						const prevKey =
 							prevDay.getFullYear() +
@@ -1393,7 +1396,7 @@
 							String(prevDay.getMonth() + 1).padStart(2, '0') +
 							'-' +
 							String(prevDay.getDate()).padStart(2, '0');
-						const prevData = getData('pinchuza_ish_' + prevKey) || {};
+						const prevData = getData('pinchuza_ish_prev_' + prevKey) || {};
 						const prevVal = prevData[key] ? prevData[key].miqdor : null;
 
 						return `<div class="worker-card${hasFilled ? ' has-data' : ''}" id="card-${key}">
@@ -1431,7 +1434,6 @@
 					input.classList.remove('filled');
 					card.classList.remove('has-data');
 				}
-				// Live summary
 				const workers = getWorkers();
 				const ishData = getIshData();
 				const filtered = workers.filter(w => {
@@ -1449,9 +1451,8 @@
 				document.getElementById('summaryLavozim').textContent =
 					activeLavozim + (activeLavozim === 'Baylovchi' ? ' (' + activeBaylovNarx + " so'm)" : '');
 
-				let totalMiqdor = 0;
-				let filledCount = 0;
-
+				let totalMiqdor = 0,
+					filledCount = 0;
 				filtered.forEach(w => {
 					const key = activeLavozim === 'Baylovchi' ? w.id + '_' + activeBaylovNarx : w.id;
 					const inp = document.getElementById('inp-' + key);
@@ -1466,48 +1467,60 @@
 				document.getElementById('sumMiqdor').textContent = totalMiqdor % 1 === 0 ? totalMiqdor : totalMiqdor.toFixed(1);
 				document.getElementById('sumUnit').textContent = birlik;
 
-				// Taxminiy maosh
 				const narxKey = activeLavozim === 'Baylovchi' ? activeLavozim + '_' + activeBaylovNarx : activeLavozim;
-				const narx = getData('pinchuza_narxlar') ? getData('pinchuza_narxlar')[narxKey] || 0 : 0;
-				if (narx > 0) {
-					const maosh = Math.round(totalMiqdor * narx);
-					document.getElementById('sumMaosh').textContent = maosh.toLocaleString() + " so'm";
-				} else {
-					document.getElementById('sumMaosh').textContent = 'Narx kiritilmagan';
-				}
+				const narxlar = getData('pinchuza_narxlar');
+				const narx = narxlar ? narxlar[narxKey] || 0 : 0;
+				document.getElementById('sumMaosh').textContent =
+					narx > 0 ? Math.round(totalMiqdor * narx).toLocaleString() + " so'm" : 'Narx kiritilmagan';
 			}
 
-			// SAQLASH
+			// SAQLASH — backendga
 			document.getElementById('saveAllBtn').addEventListener('click', saveAll);
 
-			function saveAll() {
+			async function saveAll() {
 				const workers = getWorkers();
 				const dayKey = getDayKey();
-				const ishData = getIshData();
+				const birlik = activeLavozim === 'Baylovchi' ? 'qop' : 'kg';
 
 				const filtered = workers.filter(w => {
 					if (w.lavozim !== activeLavozim) return false;
 					if (activeLavozim === 'Baylovchi') return w.baylovNarx === activeBaylovNarx;
 					return true;
 				});
-				const birlik = activeLavozim === 'Baylovchi' ? 'qop' : 'kg';
 
 				let savedCount = 0;
+				const promises = [];
+
 				filtered.forEach(w => {
 					const key = activeLavozim === 'Baylovchi' ? w.id + '_' + activeBaylovNarx : w.id;
 					const inp = document.getElementById('inp-' + key);
 					if (!inp) return;
 					const val = parseFloat(inp.value);
 					if (!isNaN(val) && val >= 0) {
-						ishData[key] = { miqdor: val, birlik, lavozim: activeLavozim, workerId: w.id, sana: dayKey };
+						promises.push(
+							IshHisobi.save({
+								ishchi_id: w.id,
+								sana: dayKey,
+								miqdor: val,
+								birlik: birlik,
+								lavozim: activeLavozim,
+								baylov_narx: activeLavozim === 'Baylovchi' ? activeBaylovNarx : null,
+							}),
+						);
 						savedCount++;
 					}
 				});
 
-				setData('pinchuza_ish_' + dayKey, ishData);
-				showToast('✅ ' + savedCount + " ta ishchi ma'lumoti saqlandi!");
-				document.getElementById('savedBadge').style.display = 'flex';
-				renderWorkersGrid();
+				try {
+					await Promise.all(promises);
+					// Cache ni yangilash
+					ishDataCache = await IshHisobi.getKunlik(dayKey);
+					showToast('✅ ' + savedCount + " ta ishchi ma'lumoti saqlandi!");
+					document.getElementById('savedBadge').style.display = 'flex';
+					renderWorkersGrid();
+				} catch (e) {
+					showToast('❌ Xato: ' + e.message);
+				}
 			}
 
 			// TOAST
@@ -1519,13 +1532,15 @@
 			}
 
 			// RENDER ALL
-			function renderAll() {
+			async function renderAll() {
+				await loadData();
 				renderDay();
 				renderLavozimTabs();
 				document.getElementById('baylovNarxTabs').style.display = activeLavozim === 'Baylovchi' ? 'flex' : 'none';
 				renderWorkersGrid();
 			}
 
+			// ISHGA TUSHIRISH
 			renderAll();
 		</script>
 	</body>
