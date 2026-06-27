@@ -11,12 +11,11 @@ app.use(express.json());
 
 // ─── DATABASE ULANISH ───
 const db = mysql.createPool({
-	host: process.env.DB_HOST || 'localhost',
-	user: process.env.DB_USER || 'root',
-	password: process.env.DB_PASS || '',
-	database: process.env.DB_NAME || 'pinchuza',
-	waitForConnections: true,
-	connectionLimit: 10,
+	host: process.env.MYSQLHOST || 'localhost',
+	user: process.env.MYSQLUSER || 'root',
+	password: process.env.MYSQLPASSWORD || '',
+	database: process.env.MYSQLDATABASE || 'pinchuza',
+	port: process.env.MYSQLPORT || 3306,
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pinchuza_secret';
