@@ -1023,6 +1023,7 @@
 				}
 			}
 		</style>
+		<script src="../api.js"></script>
 	</head>
 	<body>
 		<aside class="sidebar">
@@ -1239,12 +1240,10 @@
 		<div class="toast" id="toast"></div>
 
 		<script>
-			if (!localStorage.getItem('pinchuza_auth')) window.location.href = '../index.html';
+			// AUTH
+			Auth.check();
 			document.getElementById('logoutBtn').addEventListener('click', () => {
-				if (confirm('Tizimdan chiqasizmi?')) {
-					localStorage.removeItem('pinchuza_auth');
-					window.location.href = '../index.html';
-				}
+				if (confirm('Tizimdan chiqasizmi?')) Auth.logout();
 			});
 
 			function getData(key) {
@@ -1256,9 +1255,6 @@
 			}
 			function setData(key, val) {
 				localStorage.setItem(key, JSON.stringify(val));
-			}
-			function getWorkers() {
-				return getData('pinchuza_workers') || [];
 			}
 
 			const MONTHS = [
@@ -1279,6 +1275,7 @@
 			let activeYear = now.getFullYear();
 			let activeMonth = now.getMonth();
 			let activeLav = 'barchasi';
+			let workersCache = [];
 
 			const LAVOZIMLAR = [
 				{ key: 'barchasi', label: 'Barchasi' },
@@ -1351,17 +1348,17 @@
 				document.getElementById('panelOy').textContent = MONTHS[activeMonth] + ' ' + activeYear;
 			}
 
-			function selectMonth(i) {
+			async function selectMonth(i) {
 				activeMonth = i;
-				renderAll();
+				await renderAll();
 			}
 
-			// NARX LABEL
 			function getNarxLabel(w) {
 				const n = getNarxlar();
+				const baylovNarx = w.baylov_narx || w.baylovNarx;
 				switch (w.lavozim) {
 					case 'Baylovchi':
-						return (w.baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000).toLocaleString() + " so'm/qop";
+						return (baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000).toLocaleString() + " so'm/qop";
 					case 'Yuvuvchi':
 						return n.yuvuvchi.toLocaleString() + " so'm/kg";
 					case 'Hamir qiluvchi':
@@ -1377,12 +1374,12 @@
 				}
 			}
 
-			// MAOSH HISOBLASH
 			function calcMaosh(w, miqdor) {
 				const n = getNarxlar();
+				const baylovNarx = w.baylov_narx || w.baylovNarx;
 				switch (w.lavozim) {
 					case 'Baylovchi':
-						return miqdor * (w.baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000);
+						return miqdor * (baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000);
 					case 'Yuvuvchi':
 						return miqdor * n.yuvuvchi;
 					case 'Hamir qiluvchi':
@@ -1398,7 +1395,26 @@
 				}
 			}
 
-			// LAVOZIM TABLAR
+			function getWorkers() {
+				return workersCache;
+			}
+
+			async function loadWorkers() {
+				try {
+					const rows = await Ishchilar.getAll();
+					workersCache = rows.map(r => ({
+						id: r.id,
+						ism: r.ism,
+						familiya: r.familiya,
+						lavozim: r.lavozim,
+						baylovNarx: r.baylov_narx,
+						baylov_narx: r.baylov_narx,
+					}));
+				} catch {
+					workersCache = [];
+				}
+			}
+
 			function renderLavTabs() {
 				const workers = getWorkers();
 				document.getElementById('lavTabs').innerHTML = LAVOZIMLAR.map(l => {
@@ -1415,8 +1431,7 @@
 				renderMaosh();
 			}
 
-			// MAOSH JADVALI — har bir kun alohida qator
-			function renderMaosh() {
+			async function renderMaosh() {
 				let workers = getWorkers();
 				if (activeLav !== 'barchasi') {
 					workers = workers.filter(w => w.lavozim === activeLav);
@@ -1437,29 +1452,31 @@
 				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
 				const results = [];
 
-				workers.forEach((w, wi) => {
+				for (let wi = 0; wi < workers.length; wi++) {
+					const w = workers[wi];
 					const clr = COLORS[wi % COLORS.length];
 					const birlik = w.lavozim === 'Baylovchi' ? 'qop' : 'kg';
 					const initials = ((w.ism || '?')[0] + (w.familiya ? w.familiya[0] : '')).toUpperCase();
+					const baylovNarx = w.baylov_narx || w.baylovNarx;
 
 					for (let day = 1; day <= daysInMonth; day++) {
 						const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-						const ishData = getData('pinchuza_ish_' + dayKey) || {};
-
-						let rec = null;
-						if (w.lavozim === 'Baylovchi') {
-							rec = ishData[w.id + '_' + w.baylovNarx];
-						} else {
-							rec = ishData[w.id];
-						}
-
-						if (rec && parseFloat(rec.miqdor) > 0) {
-							const miqdor = parseFloat(rec.miqdor);
-							const maosh = calcMaosh(w, miqdor);
-							results.push({ w, clr, miqdor, maosh, birlik, initials, sana: dayKey, day });
-						}
+						try {
+							const ishData = await IshHisobi.getKunlik(dayKey);
+							let rec = null;
+							if (w.lavozim === 'Baylovchi') {
+								rec = ishData[w.id + '_' + baylovNarx];
+							} else {
+								rec = ishData[w.id];
+							}
+							if (rec && parseFloat(rec.miqdor) > 0) {
+								const miqdor = parseFloat(rec.miqdor);
+								const maosh = calcMaosh(w, miqdor);
+								results.push({ w, clr, miqdor, maosh, birlik, initials, sana: dayKey, day });
+							}
+						} catch {}
 					}
-				});
+				}
 
 				if (results.length === 0) {
 					el.innerHTML = `<div class="empty-state">
@@ -1480,7 +1497,7 @@
         <div class="w-ava" style="background:${r.clr.bg};color:${r.clr.c}">${r.initials}</div>
         <div>
           <div class="w-name">${r.w.ism || ''} ${r.w.familiya || ''}</div>
-          <div class="w-lav">${r.w.lavozim}${r.w.baylovNarx ? ' · ' + parseInt(r.w.baylovNarx).toLocaleString() + " so'm" : ''}</div>
+          <div class="w-lav">${r.w.lavozim}${r.w.baylov_narx || r.w.baylovNarx ? ' · ' + parseInt(r.w.baylov_narx || r.w.baylovNarx).toLocaleString() + " so'm" : ''}</div>
         </div>
       </div>
       <div class="cell">${r.miqdor.toLocaleString()} ${r.birlik}</div>
@@ -1495,22 +1512,18 @@
 				renderJami(results);
 			}
 
-			// STATS
 			function renderStats(results) {
-				// Ishchi bo'yicha yig'ish
 				const workerMap = {};
 				results.forEach(r => {
-					const key = r.w.id + (r.w.baylovNarx || '');
+					const key = r.w.id + (r.w.baylov_narx || r.w.baylovNarx || '');
 					if (!workerMap[key]) workerMap[key] = { w: r.w, maosh: 0 };
 					workerMap[key].maosh += r.maosh;
 				});
 				const workerList = Object.values(workerMap);
-
 				const totalMaosh = results.reduce((s, r) => s + r.maosh, 0);
 				const ishlagan = workerList.length;
 				const ortacha = ishlagan > 0 ? Math.round(totalMaosh / ishlagan) : 0;
 				const engKop = workerList.reduce((best, r) => (r.maosh > (best?.maosh || 0) ? r : best), null);
-
 				const fmt = v => (v >= 1000000 ? (v / 1000000).toFixed(1) + ' mln' : v.toLocaleString());
 
 				document.getElementById('statJami').innerHTML = fmt(totalMaosh) + "<span class='stat-unit'>so'm</span>";
@@ -1529,10 +1542,9 @@
 				}
 			}
 
-			// JAMI
 			function renderJami(results) {
 				const total = results.reduce((s, r) => s + r.maosh, 0);
-				const workerSet = new Set(results.map(r => r.w.id + (r.w.baylovNarx || '')));
+				const workerSet = new Set(results.map(r => r.w.id + (r.w.baylov_narx || r.w.baylovNarx || '')));
 				document.getElementById('jamiValue').textContent = total.toLocaleString() + " so'm";
 				document.getElementById('jamiSub').textContent =
 					MONTHS[activeMonth] + ' ' + activeYear + ' — ' + workerSet.size + ' ta ishchiga';
@@ -1546,10 +1558,11 @@
 				setTimeout(() => t.classList.remove('show'), 2200);
 			}
 
-			function renderAll() {
+			async function renderAll() {
+				await loadWorkers();
 				renderMonthTabs();
 				renderLavTabs();
-				renderMaosh();
+				await renderMaosh();
 			}
 
 			loadNarxlarToInputs();
