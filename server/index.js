@@ -282,9 +282,6 @@ app.delete('/api/ombor/:id', authMiddleware, async (req, res) => {
 // Shu qatordan oldin qo'ying:
 const path = require('path');
 app.use(express.static(path.join(__dirname, '../')));
-app.get('*', (req, res) => {
-	res.sendFile(path.join(__dirname, '../index.html'));
-});
 
 // Shu qator shu yerda qoladi:
 const PORT = process.env.PORT || 5000;
