@@ -1276,6 +1276,7 @@
 			let activeMonth = now.getMonth();
 			let activeLav = 'barchasi';
 			let workersCache = [];
+			let ishHisobiCache = {}; // { 'workerId': { '2026-06-01': miqdor, ... } }
 
 			const LAVOZIMLAR = [
 				{ key: 'barchasi', label: 'Barchasi' },
@@ -1355,10 +1356,10 @@
 
 			function getNarxLabel(w) {
 				const n = getNarxlar();
-				const baylovNarx = w.baylov_narx || w.baylovNarx;
+				const bn = w.baylov_narx || w.baylovNarx;
 				switch (w.lavozim) {
 					case 'Baylovchi':
-						return (baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000).toLocaleString() + " so'm/qop";
+						return (bn === '5000' ? n.baylov_5000 : n.baylov_4000).toLocaleString() + " so'm/qop";
 					case 'Yuvuvchi':
 						return n.yuvuvchi.toLocaleString() + " so'm/kg";
 					case 'Hamir qiluvchi':
@@ -1376,10 +1377,10 @@
 
 			function calcMaosh(w, miqdor) {
 				const n = getNarxlar();
-				const baylovNarx = w.baylov_narx || w.baylovNarx;
+				const bn = w.baylov_narx || w.baylovNarx;
 				switch (w.lavozim) {
 					case 'Baylovchi':
-						return miqdor * (baylovNarx === '5000' ? n.baylov_5000 : n.baylov_4000);
+						return miqdor * (bn === '5000' ? n.baylov_5000 : n.baylov_4000);
 					case 'Yuvuvchi':
 						return miqdor * n.yuvuvchi;
 					case 'Hamir qiluvchi':
@@ -1395,11 +1396,8 @@
 				}
 			}
 
-			function getWorkers() {
-				return workersCache;
-			}
-
-			async function loadWorkers() {
+			// MA'LUMOTLARNI YUKLASH — bitta so'rov bilan
+			async function loadAllData() {
 				try {
 					const rows = await Ishchilar.getAll();
 					workersCache = rows.map(r => ({
@@ -1407,12 +1405,32 @@
 						ism: r.ism,
 						familiya: r.familiya,
 						lavozim: r.lavozim,
-						baylovNarx: r.baylov_narx,
 						baylov_narx: r.baylov_narx,
+						baylovNarx: r.baylov_narx,
 					}));
 				} catch {
 					workersCache = [];
 				}
+
+				// Oylik ish hisobini BITTA so'rov bilan olish
+				try {
+					const oylikRows = await IshHisobi.getOylik(activeYear, activeMonth + 1);
+					// ishHisobi cache ni to'ldirish
+					// key: workerId yoki workerId_baylovNarx, value: { sana: miqdor }
+					ishHisobiCache = {};
+					oylikRows.forEach(r => {
+						const key = r.lavozim === 'Baylovchi' ? r.ishchi_id + '_' + r.baylov_narx : r.ishchi_id;
+						if (!ishHisobiCache[key]) ishHisobiCache[key] = {};
+						const sana = r.sana ? r.sana.split('T')[0] : r.sana;
+						ishHisobiCache[key][sana] = parseFloat(r.miqdor) || 0;
+					});
+				} catch {
+					ishHisobiCache = {};
+				}
+			}
+
+			function getWorkers() {
+				return workersCache;
 			}
 
 			function renderLavTabs() {
@@ -1431,7 +1449,7 @@
 				renderMaosh();
 			}
 
-			async function renderMaosh() {
+			function renderMaosh() {
 				let workers = getWorkers();
 				if (activeLav !== 'barchasi') {
 					workers = workers.filter(w => w.lavozim === activeLav);
@@ -1452,31 +1470,23 @@
 				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
 				const results = [];
 
-				for (let wi = 0; wi < workers.length; wi++) {
-					const w = workers[wi];
+				workers.forEach((w, wi) => {
 					const clr = COLORS[wi % COLORS.length];
 					const birlik = w.lavozim === 'Baylovchi' ? 'qop' : 'kg';
 					const initials = ((w.ism || '?')[0] + (w.familiya ? w.familiya[0] : '')).toUpperCase();
-					const baylovNarx = w.baylov_narx || w.baylovNarx;
+					const bn = w.baylov_narx || w.baylovNarx;
+					const cacheKey = w.lavozim === 'Baylovchi' ? w.id + '_' + bn : w.id;
+					const workerDays = ishHisobiCache[cacheKey] || {};
 
 					for (let day = 1; day <= daysInMonth; day++) {
 						const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-						try {
-							const ishData = await IshHisobi.getKunlik(dayKey);
-							let rec = null;
-							if (w.lavozim === 'Baylovchi') {
-								rec = ishData[w.id + '_' + baylovNarx];
-							} else {
-								rec = ishData[w.id];
-							}
-							if (rec && parseFloat(rec.miqdor) > 0) {
-								const miqdor = parseFloat(rec.miqdor);
-								const maosh = calcMaosh(w, miqdor);
-								results.push({ w, clr, miqdor, maosh, birlik, initials, sana: dayKey, day });
-							}
-						} catch {}
+						const miqdor = workerDays[dayKey];
+						if (miqdor && miqdor > 0) {
+							const maosh = calcMaosh(w, miqdor);
+							results.push({ w, clr, miqdor, maosh, birlik, initials, sana: dayKey, day });
+						}
 					}
-				}
+				});
 
 				if (results.length === 0) {
 					el.innerHTML = `<div class="empty-state">
@@ -1559,14 +1569,14 @@
 			}
 
 			async function renderAll() {
-				await loadWorkers();
 				renderMonthTabs();
+				await loadAllData();
 				renderLavTabs();
-				await renderMaosh();
+				renderMaosh();
 			}
 
 			loadNarxlarToInputs();
-			renderAll();
+			renderAll();	
 		</script>
 	</body>
 </html>
