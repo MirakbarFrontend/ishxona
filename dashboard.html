@@ -1088,6 +1088,20 @@
 					font-size: 20px;
 				}
 			}
+			.module-btn {
+				cursor: pointer;
+				transition:
+					border-color 0.15s ease,
+					background 0.15s ease,
+					transform 0.1s ease;
+			}
+			.module-btn:hover {
+				transform: translateY(-2px);
+			}
+			.module-btn.active {
+				border-color: var(--accent);
+				background: var(--accent-g);
+			}
 		</style>
 		<script src="api.js"></script>
 	</head>
@@ -1286,36 +1300,37 @@
 				</div>
 
 				<!-- MODUL TUGMALARI -->
+				<!-- MODUL TUGMALARI -->
 				<div class="modules-grid">
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Baylovchi" onclick="selectModuleLavozim('Baylovchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--accent)">
 							<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
 							<circle cx="9" cy="7" r="4" /></svg
 						><span>Baylovchilar</span>
 					</div>
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Chiqaruvchi" onclick="selectModuleLavozim('Chiqaruvchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--green)">
 							<circle cx="12" cy="12" r="10" />
 							<path d="M12 8v4l3 3" /></svg
 						><span>Chiqaruvchilar</span>
 					</div>
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Yuvuvchi" onclick="selectModuleLavozim('Yuvuvchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--amber)"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg
 						><span>Yuvuvchilar</span>
 					</div>
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Qurutuvchi" onclick="selectModuleLavozim('Qurutuvchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--purple)">
 							<path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" />
 							<path d="M12 6v6l4 2" /></svg
 						><span>Qurutuvchilar</span>
 					</div>
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Hamir qiluvchi" onclick="selectModuleLavozim('Hamir qiluvchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--coral)">
 							<path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
 							<path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg
 						><span>Hamir qiluvchilar</span>
 					</div>
-					<div class="module-btn">
+					<div class="module-btn" data-lavozim="Qirquvchi" onclick="selectModuleLavozim('Qirquvchi')">
 						<svg viewBox="0 0 24 24" style="stroke: var(--muted2)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg
 						><span>Qirquvchilar</span>
 					</div>
@@ -1404,6 +1419,12 @@
 			let activeYear = now.getFullYear();
 			let activeMonth = now.getMonth();
 			let activeDay = now.getDate();
+
+			// Tanlangan lavozim filtri (null = hammasi)
+			let activeModuleLavozim = null;
+			// Ishchilar ro'yxatini qayta render qilish uchun cache
+			let workersFullList = [];
+			let ishHisobiCache = {};
 
 			function formatDate(y, m, d) {
 				return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
@@ -1510,6 +1531,23 @@
 				{ bg: 'var(--coral-g)', c: 'var(--coral)' },
 			];
 
+			// MODUL KARTOCHKASI BOSILGANDA — LAVOZIM BO'YICHA FILTRLASH
+			function selectModuleLavozim(lavozim) {
+				// Agar shu lavozim allaqachon tanlangan bo'lsa — filtrni bekor qilish (hammasini ko'rsatish)
+				if (activeModuleLavozim === lavozim) {
+					activeModuleLavozim = null;
+				} else {
+					activeModuleLavozim = lavozim;
+				}
+
+				// Kartochkalarda "active" klassini yangilash
+				document.querySelectorAll('.module-btn').forEach(btn => {
+					btn.classList.toggle('active', btn.dataset.lavozim === activeModuleLavozim);
+				});
+
+				renderWorkersList();
+			}
+
 			// STATS
 			async function renderStats() {
 				try {
@@ -1551,22 +1589,43 @@
 						: jami.toLocaleString() + "<span class='stat-unit'>so'm</span>";
 			}
 
-			// ISHCHILAR
-			async function renderWorkers() {
-				const el = document.getElementById('workersList');
+			// ISHCHILAR MA'LUMOTINI YUKLASH (faqat ma'lumot, render alohida funksiyada)
+			async function loadWorkers() {
 				try {
-					const workers = await Ishchilar.getAll();
-					const dayKey = getDayKey(activeYear, activeMonth, activeDay);
+					workersFullList = await Ishchilar.getAll();
+				} catch {
+					workersFullList = [];
+				}
 
-					// Ish hisobini backenddan olish
-					let ishHisobi = {};
-					try {
-						ishHisobi = await IshHisobi.getKunlik(dayKey);
-					} catch {}
+				const dayKey = getDayKey(activeYear, activeMonth, activeDay);
+				try {
+					ishHisobiCache = await IshHisobi.getKunlik(dayKey);
+				} catch {
+					ishHisobiCache = {};
+				}
+			}
+
+			// ISHCHILAR RO'YXATINI RENDER QILISH (filtr bilan)
+			function renderWorkersList() {
+				const el = document.getElementById('workersList');
+				const titleEl = document.getElementById('workersListTitle');
+
+				try {
+					// Lavozim bo'yicha filtrlash
+					let workers = workersFullList;
+					if (activeModuleLavozim) {
+						workers = workers.filter(w => w.lavozim === activeModuleLavozim);
+					}
+
+					if (titleEl) {
+						titleEl.textContent = activeModuleLavozim ? activeModuleLavozim + 'lar — faol ishchilar' : 'Bugungi faol ishchilar';
+					}
 
 					if (workers.length === 0) {
 						el.innerHTML =
-							'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div>Hali ishchilar qo\'shilmagan</div></div>';
+							'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div>' +
+							(activeModuleLavozim ? 'Bu lavozimda ishchi topilmadi' : "Hali ishchilar qo'shilmagan") +
+							'</div></div>';
 						return;
 					}
 
@@ -1581,10 +1640,10 @@
 							const lavozim = w.lavozim || w.lavozim;
 							const baylovNarx = w.baylov_narx || w.baylovNarx;
 
-							let ish = ishHisobi[w.id] || {};
+							let ish = ishHisobiCache[w.id] || {};
 							if (lavozim === 'Baylovchi') {
-								const ish4000 = ishHisobi[w.id + '_4000'] || {};
-								const ish5000 = ishHisobi[w.id + '_5000'] || {};
+								const ish4000 = ishHisobiCache[w.id + '_4000'] || {};
+								const ish5000 = ishHisobiCache[w.id + '_5000'] || {};
 								const jamiQ = (parseFloat(ish4000.miqdor) || 0) + (parseFloat(ish5000.miqdor) || 0);
 								ish = { miqdor: jamiQ || '', birlik: 'qop' };
 							}
@@ -1620,10 +1679,12 @@
 					el.innerHTML = savdoList
 						.map((s, i) => {
 							const c = dotColors[i % dotColors.length];
-							const sana = s.sana ? new Date(s.sana + 'T00:00:00') : null;
+							// sana turli formatda kelishi mumkin (ISO bilan yoki yo'q) — moslashtirib olamiz
+							const rawSana = s.sana ? String(s.sana).split('T')[0] : null;
+							const sana = rawSana ? new Date(rawSana + 'T00:00:00') : null;
 							const today = new Date();
 							let sanaText = '—';
-							if (sana) {
+							if (sana && !isNaN(sana.getTime())) {
 								if (sana.toDateString() === today.toDateString()) sanaText = 'Bugun';
 								else {
 									const yest = new Date();
@@ -1681,7 +1742,8 @@
 				renderDayNav();
 				renderTopbar();
 				await renderStats();
-				await renderWorkers();
+				await loadWorkers();
+				renderWorkersList();
 				await renderSales();
 				renderStock();
 			}
