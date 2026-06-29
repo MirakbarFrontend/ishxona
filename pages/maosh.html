@@ -1021,6 +1021,90 @@
 				.jami-value {
 					font-size: 21px;
 				}
+			} /* === ISHCHI DETAIL MODAL === */
+			.modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.6);
+				backdrop-filter: blur(4px);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.2s ease,
+					visibility 0.2s ease;
+				z-index: 1000;
+			}
+
+			.modal-overlay.open {
+				opacity: 1;
+				visibility: visible;
+			}
+
+			.modal-overlay .modal {
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 16px;
+				width: 100%;
+				max-height: 85vh;
+				overflow-y: auto;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+				transform: translateY(20px) scale(0.97);
+				transition: transform 0.2s ease;
+			}
+
+			.modal-overlay.open .modal {
+				transform: translateY(0) scale(1);
+			}
+
+			.modal-head {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 20px 24px;
+				border-bottom: 1px solid var(--border);
+				position: sticky;
+				top: 0;
+				background: var(--surface);
+				border-radius: 16px 16px 0 0;
+			}
+
+			.modal-head h3 {
+				font-size: 16px;
+				font-weight: 700;
+				color: var(--text);
+				margin: 0;
+			}
+
+			.modal-close {
+				width: 32px;
+				height: 32px;
+				border-radius: 8px;
+				border: 1px solid var(--border);
+				background: var(--surface2);
+				color: var(--muted2);
+				font-size: 14px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition:
+					background 0.15s ease,
+					color 0.15s ease;
+			}
+
+			.modal-close:hover {
+				background: var(--coral-g);
+				color: var(--coral);
+			}
+
+			#ishchiModalBody {
+				padding: 16px 24px 24px;
 			}
 		</style>
 		<script src="../api.js"></script>
@@ -1238,7 +1322,16 @@
 		</main>
 
 		<div class="toast" id="toast"></div>
-
+		<!-- ISHCHI HISOBI MODAL -->
+		<div class="modal-overlay" id="ishchiModal">
+			<div class="modal" style="max-width: 550px">
+				<div class="modal-head">
+					<h3 id="ishchiModalTitle">Ishchi hisobi</h3>
+					<button class="modal-close" onclick="closeIshchiModal()">✕</button>
+				</div>
+				<div id="ishchiModalBody"></div>
+			</div>
+		</div>
 		<script>
 			// AUTH
 			Auth.check();
@@ -1276,7 +1369,7 @@
 			let activeMonth = now.getMonth();
 			let activeLav = 'barchasi';
 			let workersCache = [];
-			let ishHisobiCache = {}; // { 'workerId': { '2026-06-01': miqdor, ... } }
+			let ishHisobiCache = {};
 
 			const LAVOZIMLAR = [
 				{ key: 'barchasi', label: 'Barchasi' },
@@ -1396,7 +1489,6 @@
 				}
 			}
 
-			// MA'LUMOTLARNI YUKLASH — bitta so'rov bilan
 			async function loadAllData() {
 				try {
 					const rows = await Ishchilar.getAll();
@@ -1412,11 +1504,8 @@
 					workersCache = [];
 				}
 
-				// Oylik ish hisobini BITTA so'rov bilan olish
 				try {
 					const oylikRows = await IshHisobi.getOylik(activeYear, activeMonth + 1);
-					// ishHisobi cache ni to'ldirish
-					// key: workerId yoki workerId_baylovNarx, value: { sana: miqdor }
 					ishHisobiCache = {};
 					oylikRows.forEach(r => {
 						const key = r.lavozim === 'Baylovchi' ? r.ishchi_id + '_' + r.baylov_narx : r.ishchi_id;
@@ -1478,13 +1567,22 @@
 					const cacheKey = w.lavozim === 'Baylovchi' ? w.id + '_' + bn : w.id;
 					const workerDays = ishHisobiCache[cacheKey] || {};
 
+					let totalMiqdor = 0;
+					let totalMaosh = 0;
+					let ishlagan = 0;
+
 					for (let day = 1; day <= daysInMonth; day++) {
 						const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
 						const miqdor = workerDays[dayKey];
 						if (miqdor && miqdor > 0) {
-							const maosh = calcMaosh(w, miqdor);
-							results.push({ w, clr, miqdor, maosh, birlik, initials, sana: dayKey, day });
+							totalMiqdor += miqdor;
+							totalMaosh += calcMaosh(w, miqdor);
+							ishlagan++;
 						}
+					}
+
+					if (totalMiqdor > 0) {
+						results.push({ w, clr, totalMiqdor, totalMaosh, birlik, initials, ishlagan, cacheKey, workerDays });
 					}
 				});
 
@@ -1500,8 +1598,6 @@
 
 				el.innerHTML = results
 					.map(r => {
-						const d = new Date(r.sana + 'T00:00:00');
-						const sanaText = r.day + ' ' + MONTHS[d.getMonth()];
 						return `<div class="table-row">
       <div class="worker-cell">
         <div class="w-ava" style="background:${r.clr.bg};color:${r.clr.c}">${r.initials}</div>
@@ -1510,10 +1606,16 @@
           <div class="w-lav">${r.w.lavozim}${r.w.baylov_narx || r.w.baylovNarx ? ' · ' + parseInt(r.w.baylov_narx || r.w.baylovNarx).toLocaleString() + " so'm" : ''}</div>
         </div>
       </div>
-      <div class="cell">${r.miqdor.toLocaleString()} ${r.birlik}</div>
+      <div class="cell">${r.totalMiqdor.toLocaleString()} ${r.birlik}</div>
       <div class="cell" style="font-size:12px">${getNarxLabel(r.w)}</div>
-      <div class="cell">${sanaText}</div>
-      <div class="maosh-val">${r.maosh.toLocaleString()} so'm</div>
+      <div class="cell">${r.ishlagan} kun</div>
+      <div class="cell" style="display:flex;align-items:center;justify-content:space-between">
+        <span class="maosh-val">${r.totalMaosh.toLocaleString()} so'm</span>
+        <button onclick="showIshchiDetail('${r.w.id}','${r.w.ism || ''} ${r.w.familiya || ''}','${r.cacheKey}')"
+          style="padding:5px 12px;background:var(--accent-g);color:var(--accent);border:1px solid rgba(79,142,247,0.3);border-radius:7px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;white-space:nowrap;margin-left:8px">
+          Ko'rish
+        </button>
+      </div>
     </div>`;
 					})
 					.join('');
@@ -1522,18 +1624,60 @@
 				renderJami(results);
 			}
 
+			// ISHCHI DETAIL MODAL
+			function showIshchiDetail(workerId, workerName, cacheKey) {
+				const workerDays = ishHisobiCache[cacheKey] || {};
+				const w = getWorkers().find(x => x.id === workerId);
+				if (!w) return;
+
+				const birlik = w.lavozim === 'Baylovchi' ? 'qop' : 'kg';
+				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
+
+				let rows = '';
+				let totalMiqdor = 0;
+				let totalMaosh = 0;
+
+				for (let day = 1; day <= daysInMonth; day++) {
+					const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+					const miqdor = workerDays[dayKey];
+					if (miqdor && miqdor > 0) {
+						const maosh = calcMaosh(w, miqdor);
+						totalMiqdor += miqdor;
+						totalMaosh += maosh;
+						const d = new Date(dayKey + 'T00:00:00');
+						const sanaText = day + ' ' + MONTHS[d.getMonth()];
+						rows += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div style="color:var(--text)">${sanaText}</div>
+        <div style="color:var(--muted2)">${miqdor.toLocaleString()} ${birlik}</div>
+        <div style="color:var(--green);font-weight:600">${maosh.toLocaleString()} so'm</div>
+      </div>`;
+					}
+				}
+
+				document.getElementById('ishchiModalTitle').textContent = workerName + ' — ' + MONTHS[activeMonth] + ' ' + activeYear;
+				document.getElementById('ishchiModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:8px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);margin-bottom:4px">
+      <div>Sana</div><div>Miqdor</div><div>Maosh</div>
+    </div>
+    ${rows || '<div style="text-align:center;padding:30px;color:var(--muted)">Bu oy ish hisobi yo\'q</div>'}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 0;margin-top:8px;background:var(--surface2);border-radius:10px;padding:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">Jami</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text)">${totalMiqdor.toLocaleString()} ${birlik}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--green)">${totalMaosh.toLocaleString()} so'm</div>
+    </div>`;
+
+				document.getElementById('ishchiModal').classList.add('open');
+			}
+
+			function closeIshchiModal() {
+				document.getElementById('ishchiModal').classList.remove('open');
+			}
+
 			function renderStats(results) {
-				const workerMap = {};
-				results.forEach(r => {
-					const key = r.w.id + (r.w.baylov_narx || r.w.baylovNarx || '');
-					if (!workerMap[key]) workerMap[key] = { w: r.w, maosh: 0 };
-					workerMap[key].maosh += r.maosh;
-				});
-				const workerList = Object.values(workerMap);
-				const totalMaosh = results.reduce((s, r) => s + r.maosh, 0);
-				const ishlagan = workerList.length;
+				const totalMaosh = results.reduce((s, r) => s + r.totalMaosh, 0);
+				const ishlagan = results.length;
 				const ortacha = ishlagan > 0 ? Math.round(totalMaosh / ishlagan) : 0;
-				const engKop = workerList.reduce((best, r) => (r.maosh > (best?.maosh || 0) ? r : best), null);
+				const engKop = results.reduce((best, r) => (r.totalMaosh > (best?.totalMaosh || 0) ? r : best), null);
 				const fmt = v => (v >= 1000000 ? (v / 1000000).toFixed(1) + ' mln' : v.toLocaleString());
 
 				document.getElementById('statJami').innerHTML = fmt(totalMaosh) + "<span class='stat-unit'>so'm</span>";
@@ -1542,8 +1686,8 @@
 				document.getElementById('statIshchilarSub').textContent = ishlagan + ' ta ish hisobi bor';
 				document.getElementById('statOrtacha').innerHTML = fmt(ortacha) + "<span class='stat-unit'>so'm</span>";
 
-				if (engKop && engKop.maosh > 0) {
-					document.getElementById('statEngKop').textContent = fmt(engKop.maosh) + " so'm";
+				if (engKop && engKop.totalMaosh > 0) {
+					document.getElementById('statEngKop').textContent = fmt(engKop.totalMaosh) + " so'm";
 					document.getElementById('statEngKopIsm').textContent =
 						(engKop.w.ism || '') + (engKop.w.familiya ? ' ' + engKop.w.familiya : '');
 				} else {
@@ -1553,12 +1697,11 @@
 			}
 
 			function renderJami(results) {
-				const total = results.reduce((s, r) => s + r.maosh, 0);
-				const workerSet = new Set(results.map(r => r.w.id + (r.w.baylov_narx || r.w.baylovNarx || '')));
+				const total = results.reduce((s, r) => s + r.totalMaosh, 0);
 				document.getElementById('jamiValue').textContent = total.toLocaleString() + " so'm";
 				document.getElementById('jamiSub').textContent =
-					MONTHS[activeMonth] + ' ' + activeYear + ' — ' + workerSet.size + ' ta ishchiga';
-				setData('pinchuza_maosh_' + getMonthKey(), { jami: total, ishlagan: workerSet.size });
+					MONTHS[activeMonth] + ' ' + activeYear + ' — ' + results.length + ' ta ishchiga';
+				setData('pinchuza_maosh_' + getMonthKey(), { jami: total, ishlagan: results.length });
 			}
 
 			function showToast(msg) {
@@ -1568,6 +1711,15 @@
 				setTimeout(() => t.classList.remove('show'), 2200);
 			}
 
+			document.addEventListener('keydown', e => {
+				if (e.key === 'Escape') closeIshchiModal();
+			});
+
+			// MODAL OVERLAYNI BOSGANDA YOPISH (overlay tashqarisi bosilsa yopiladi, modal ichi bosilsa yopilmaydi)
+			document.getElementById('ishchiModal').addEventListener('click', e => {
+				if (e.target.id === 'ishchiModal') closeIshchiModal();
+			});
+
 			async function renderAll() {
 				renderMonthTabs();
 				await loadAllData();
@@ -1576,7 +1728,7 @@
 			}
 
 			loadNarxlarToInputs();
-			renderAll();	
+			renderAll();
 		</script>
 	</body>
 </html>

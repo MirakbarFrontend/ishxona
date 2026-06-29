@@ -455,11 +455,6 @@
 			}
 
 			/* TWO COL */
-			.two-col {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 20px;
-			}
 
 			/* PANEL */
 			.panel {
@@ -847,15 +842,15 @@
 				animation-delay: 0.2s;
 			}
 			/* =========================================================
-   RESPONSIVE STYLES — "Ombor" sahifasi uchun
-   Mobil va Tablet moslashuvi
-   Asosiy CSS faylining OXIRIGA shu qismni qo'shing.
-   HTML o'zgarmaydi, faqat CSS qo'shiladi.
-   ========================================================= */
+			RESPONSIVE STYLES — "Ombor" sahifasi uchun
+			Mobil va Tablet moslashuvi
+			Asosiy CSS faylining OXIRIGA shu qismni qo'shing.
+			HTML o'zgarmaydi, faqat CSS qo'shiladi.
+			========================================================= */
 
 			/* -----------------------------------------------------------
-   1) TABLET (≤1024px)
-   ----------------------------------------------------------- */
+			1) TABLET (≤1024px)
+			----------------------------------------------------------- */
 			@media (max-width: 1024px) {
 				:root {
 					--sidebar-w: 200px;
@@ -888,14 +883,14 @@
 			}
 
 			/* -----------------------------------------------------------
-   2) KICHIK TABLET / KATTA TELEFON (≤860px)
-   Sidebar pastga bottom-nav bo'lib tushadi
-   ----------------------------------------------------------- */
+			2) KICHIK TABLET / KATTA TELEFON (≤860px)
+			Sidebar pastga bottom-nav bo'lib tushadi
+			----------------------------------------------------------- */
 			@media (max-width: 860px) {
 				/* Bu sahifada body { overflow: hidden } bor.
-	   Mobil rejimda bu butun sahifa scroll'ini bloklab qo'yishi
-	   mumkin, shuning uchun ochib qo'yamiz va scroll'ni
-	   .main o'ziga oladi (pastroqda belgilangan). */
+			 Mobil rejimda bu butun sahifa scroll'ini bloklab qo'yishi
+			 mumkin, shuning uchun ochib qo'yamiz va scroll'ni
+			 .main o'ziga oladi (pastroqda belgilangan). */
 				body {
 					overflow: visible;
 					flex-direction: column;
@@ -1047,8 +1042,8 @@
 			}
 
 			/* -----------------------------------------------------------
-   3) TELEFON (≤640px)
-   ----------------------------------------------------------- */
+			3) TELEFON (≤640px)
+			----------------------------------------------------------- */
 			@media (max-width: 640px) {
 				.content {
 					padding: 14px;
@@ -1104,11 +1099,11 @@
 				}
 
 				/* ============================================
-	   KIRIM JADVALI -> CARD-LIST KO'RINISHI
-	   Header yashiriladi, qator karta bo'ladi.
-	   Ustun tartibi: cell(sana/turi) -> cell(miqdor) ->
-	   cell-muted/badge(izoh) -> del-btn
-	   ============================================ */
+			 KIRIM JADVALI -> CARD-LIST KO'RINISHI
+			 Header yashiriladi, qator karta bo'ladi.
+			 Ustun tartibi: cell(sana/turi) -> cell(miqdor) ->
+			 cell-muted/badge(izoh) -> del-btn
+			 ============================================ */
 				.table-head {
 					display: none;
 				}
@@ -1212,8 +1207,8 @@
 			}
 
 			/* -----------------------------------------------------------
-   4) JUDA KICHIK TELEFON (≤380px)
-   ----------------------------------------------------------- */
+			4) JUDA KICHIK TELEFON (≤380px)
+			----------------------------------------------------------- */
 			@media (max-width: 380px) {
 				.hamir-grid {
 					grid-template-columns: 1fr;
@@ -1399,7 +1394,6 @@
 				</div>
 
 				<!-- JADVALLAR -->
-				<div class="two-col">
 					<!-- KIRIM -->
 					<div class="panel">
 						<div class="panel-head">
@@ -1420,24 +1414,6 @@
 						</div>
 						<div id="kirimList"></div>
 					</div>
-
-					<!-- HAMIR ISHLATISH -->
-					<div class="panel">
-						<div class="panel-head">
-							<h2>Hamir qiluvchilar iste'moli</h2>
-							<button class="btn-sm" id="saveHamirBtn">
-								<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-								Saqlash
-							</button>
-						</div>
-						<div style="padding: 16px 22px">
-							<p style="font-size: 12.5px; color: var(--muted); margin-bottom: 14px">
-								Har bir hamir qiluvchi necha kg kraxmal ishlatganini kiriting
-							</p>
-							<div class="hamir-grid" id="hamirGrid"></div>
-						</div>
-					</div>
-				</div>
 
 				<!-- OYLIK JAMI -->
 				<div class="hamir-panel" style="margin-top: 20px">
@@ -1559,6 +1535,9 @@
 			let kirimlarCache = [];
 			let workersCache = [];
 
+			// Race-condition oldini olish uchun token
+			let renderToken = 0;
+
 			function getMonthKey() {
 				return activeYear + '-' + String(activeMonth + 1).padStart(2, '0');
 			}
@@ -1606,29 +1585,40 @@
 				}
 			}
 
-			// ISH HISOBIDAN HAMIR AVTOMATIK HISOBLASH
+			// ISH HISOBIDAN HAMIR AVTOMATIK HISOBLASH (PARALLEL — TEZKOR)
 			async function getHamirFromIshHisobi() {
 				const workers = workersCache.filter(w => w.lavozim === 'Hamir qiluvchi');
-				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
-				let total = 0;
+				if (workers.length === 0) return 0;
 
+				const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
+				const dayKeys = [];
 				for (let day = 1; day <= daysInMonth; day++) {
-					const dayKey = activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-					try {
-						const ishData = await IshHisobi.getKunlik(dayKey);
-						workers.forEach(w => {
-							const rec = ishData[w.id];
-							if (rec && rec.miqdor) total += parseFloat(rec.miqdor) || 0;
-						});
-					} catch {}
+					dayKeys.push(activeYear + '-' + String(activeMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'));
 				}
+
+				// Barcha kunlarni PARALLEL so'rash (ketma-ket emas — bu sekinlikning sababi edi)
+				const allDaysData = await Promise.all(dayKeys.map(dayKey => IshHisobi.getKunlik(dayKey).catch(() => ({}))));
+
+				let total = 0;
+				allDaysData.forEach(ishData => {
+					workers.forEach(w => {
+						const rec = ishData[w.id];
+						if (rec && rec.miqdor) total += parseFloat(rec.miqdor) || 0;
+					});
+				});
 				return total;
 			}
 
-			// STATS
+			// STATS (race-condition himoyasi bilan)
 			async function renderStats() {
+				const myToken = ++renderToken;
+
 				const totalKirimT = kirimlarCache.reduce((s, x) => s + (parseFloat(x.miqdor) || 0), 0);
 				const totalIshlatilganKg = await getHamirFromIshHisobi();
+
+				// Agar shu kutish vaqtida boshqa renderStats() chaqirilgan bo'lsa, eski natijani tashlab yuboramiz
+				if (myToken !== renderToken) return;
+
 				const kirimKg = totalKirimT * 1000;
 				const qoldiqKg = Math.max(0, kirimKg - totalIshlatilganKg);
 				const qoldiqT = qoldiqKg / 1000;
